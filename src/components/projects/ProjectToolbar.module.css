@@ -1,0 +1,145 @@
+/* ── Project Toolbar ─────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  flex-wrap: wrap;
+}
+
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex: 1;
+  min-width: 0;
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.toolbarSearch {
+  max-width: 280px;
+  flex: 1;
+}
+
+.toolbarDivider {
+  width: 1px;
+  height: 20px;
+  background-color: var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.toolbarCount {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* ── Selection Toolbar (floating) ───────────────────────── */
+
+.selectionBar {
+  position: fixed;
+  bottom: var(--space-10);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-4) var(--space-7);
+  background-color: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-overlay);
+  animation: selectionBarIn var(--duration-moderate) var(--ease-out);
+}
+
+@keyframes selectionBarIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+.selectionCount {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  padding-right: var(--space-4);
+  border-right: 1px solid var(--color-border-subtle);
+}
+
+.selectionActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.selectionClose {
+  margin-left: var(--space-2);
+}
+
+/* ── Filter Chips ───────────────────────────────────────── */
+
+.filterChips {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* ── Grid / List Container ──────────────────────────────── */
+
+.projectGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-6);
+  padding: var(--space-4) 0;
+}
+
+.projectList {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  padding: var(--space-17) var(--space-10);
+  text-align: center;
+}
+
+.emptyIcon {
+  color: var(--color-text-muted);
+  opacity: 0.4;
+}
+
+.emptyTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.emptyDescription {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  max-width: 360px;
+  line-height: var(--leading-normal);
+}

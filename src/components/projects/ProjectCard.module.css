@@ -1,0 +1,342 @@
+/* ── Project Card ────────────────────────────────────────── */
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-7);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color var(--duration-fast) var(--ease-default),
+    border-color var(--duration-fast) var(--ease-default),
+    box-shadow var(--duration-fast) var(--ease-default),
+    transform var(--duration-fast) var(--ease-default);
+}
+
+.card:hover {
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-md);
+  background-color: var(--color-surface-hover);
+}
+
+.card:active {
+  transform: scale(0.99);
+}
+
+.cardSelected {
+  border-color: var(--color-selection-border);
+  background-color: var(--color-selection-bg);
+  box-shadow: var(--shadow-selection);
+}
+
+.cardSelected:hover {
+  background-color: var(--color-selection-bg);
+  border-color: var(--color-selection-border);
+}
+
+.cardPinned {
+  border-left: 3px solid var(--color-accent);
+}
+
+/* ── Checkbox Overlay ───────────────────────────────────── */
+
+.cardCheckbox {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-4);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-default);
+  z-index: 2;
+}
+
+.card:hover .cardCheckbox,
+.cardSelected .cardCheckbox {
+  opacity: 1;
+}
+
+/* ── Card Header ────────────────────────────────────────── */
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.cardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-size: var(--text-lg);
+  flex-shrink: 0;
+}
+
+.cardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardName {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  line-height: var(--leading-tight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardPath {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardMenuBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--duration-fast) var(--ease-default),
+    background-color var(--duration-fast) var(--ease-default),
+    color var(--duration-fast) var(--ease-default);
+  flex-shrink: 0;
+}
+
+.card:hover .cardMenuBtn {
+  opacity: 1;
+}
+
+.cardMenuBtn:hover {
+  background-color: var(--color-surface-active);
+  color: var(--color-text-primary);
+}
+
+/* ── Card Body ──────────────────────────────────────────── */
+
+.cardDescription {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Card Tags ──────────────────────────────────────────── */
+
+.cardTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* ── Card Footer ────────────────────────────────────────── */
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.cardStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cardStatusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.cardStatusLabel {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.cardMeta {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+/* ── Quick Actions (visible on hover) ───────────────────── */
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-default);
+}
+
+.card:hover .cardActions {
+  opacity: 1;
+}
+
+.cardActionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-default),
+    color var(--duration-fast) var(--ease-default);
+}
+
+.cardActionBtn:hover {
+  background-color: var(--color-surface-active);
+  color: var(--color-accent);
+}
+
+/* ── Project Row (list view) ────────────────────────────── */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-6);
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-subtle);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color var(--duration-fast) var(--ease-default);
+}
+
+.row:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.row:active {
+  background-color: var(--color-surface-active);
+}
+
+.rowSelected {
+  background-color: var(--color-selection-bg);
+}
+
+.rowSelected:hover {
+  background-color: var(--color-selection-bg);
+}
+
+.rowCheckbox {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-default);
+}
+
+.row:hover .rowCheckbox,
+.rowSelected .rowCheckbox {
+  opacity: 1;
+}
+
+.rowIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.rowName {
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowPath {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowTags {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  max-width: 200px;
+  overflow: hidden;
+}
+
+.rowStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.rowMeta {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  min-width: 80px;
+  text-align: right;
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-default);
+  flex-shrink: 0;
+}
+
+.row:hover .rowActions {
+  opacity: 1;
+}
