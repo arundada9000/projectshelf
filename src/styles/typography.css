@@ -1,0 +1,78 @@
+/* ============================================================
+   ProjectShelf Typography System
+   5 selectable UI fonts + monospace fonts for code/paths.
+   Switch via [data-font="..."] on <html>.
+   Extensible: add more fonts by adding a new [data-font] block.
+   
+   Font CSS variables are injected by next/font in layout.tsx:
+     --font-inter, --font-jakarta, --font-outfit,
+     --font-geist, --font-jetbrains-mono
+   ============================================================ */
+
+/* ── Typography Scale ───────────────────────────────────── */
+:root {
+  /* Sans-serif variable: overridden by [data-font] selectors below */
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* Monospace: used for paths, commands, technical content */
+  --font-mono: var(--font-jetbrains-mono), 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', 'Liberation Mono', monospace;
+
+  /* ── Type Scale ─────────────────────────────────────── */
+  --text-xs: 0.6875rem;     /* 11px */
+  --text-sm: 0.75rem;       /* 12px */
+  --text-base: 0.8125rem;   /* 13px */
+  --text-md: 0.875rem;      /* 14px */
+  --text-lg: 1rem;          /* 16px */
+  --text-xl: 1.125rem;      /* 18px */
+  --text-2xl: 1.25rem;      /* 20px */
+  --text-3xl: 1.5rem;       /* 24px */
+  --text-4xl: 1.875rem;     /* 30px */
+  --text-5xl: 2.25rem;      /* 36px */
+  --text-6xl: 3rem;         /* 48px */
+
+  /* ── Line Heights ───────────────────────────────────── */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+
+  /* ── Font Weights ───────────────────────────────────── */
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ── Letter Spacing ─────────────────────────────────── */
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.02em;
+  --tracking-wider: 0.04em;
+  --tracking-label: 0.03em;
+}
+
+/* ── Font: Inter (Default) ──────────────────────────────── */
+[data-font="inter"],
+:root {
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ── Font: Plus Jakarta Sans ────────────────────────────── */
+[data-font="jakarta"] {
+  --font-sans: var(--font-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ── Font: Geist ────────────────────────────────────────── */
+[data-font="geist"] {
+  --font-sans: var(--font-geist), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ── Font: Outfit ───────────────────────────────────────── */
+[data-font="outfit"] {
+  --font-sans: var(--font-outfit), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ── Font: JetBrains Mono (full monospace UI) ───────────── */
+[data-font="mono"] {
+  --font-sans: var(--font-jetbrains-mono), 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+}
