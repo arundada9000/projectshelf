@@ -1,0 +1,158 @@
+/* ── Context Menu ────────────────────────────────────────── */
+
+.menuOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-popover);
+}
+
+.menu {
+  position: fixed;
+  z-index: var(--z-popover);
+  min-width: 200px;
+  max-width: 280px;
+  padding: var(--space-2);
+  background-color: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-overlay);
+  animation: menuShow var(--duration-fast) var(--ease-out);
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+@keyframes menuShow {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  width: 100%;
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-normal);
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color var(--duration-instant) var(--ease-default),
+    color var(--duration-instant) var(--ease-default);
+  white-space: nowrap;
+  line-height: var(--leading-snug);
+}
+
+.menuItem:hover,
+.menuItem:focus-visible {
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  outline: none;
+}
+
+.menuItem:hover .menuItemShortcut,
+.menuItem:focus-visible .menuItemShortcut {
+  color: inherit;
+  opacity: 0.7;
+}
+
+.menuItem:active {
+  opacity: 0.9;
+}
+
+.menuItemDanger {
+  color: var(--color-danger-text);
+}
+
+.menuItemDanger:hover,
+.menuItemDanger:focus-visible {
+  background-color: var(--color-danger);
+  color: #ffffff;
+}
+
+.menuItem:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+.menuItem:disabled:hover {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.menuItemIcon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 16px;
+  color: var(--color-text-muted);
+}
+
+.menuItem:hover .menuItemIcon,
+.menuItem:focus-visible .menuItemIcon {
+  color: inherit;
+}
+
+.menuItemLabel {
+  flex: 1;
+  min-width: 0;
+}
+
+.menuItemShortcut {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  margin-left: var(--space-8);
+}
+
+.menuSeparator {
+  height: 1px;
+  margin: var(--space-2) var(--space-3);
+  background-color: var(--color-border-subtle);
+}
+
+.menuLabel {
+  padding: var(--space-3) var(--space-5) var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-muted);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* ── Dropdown Menu (button triggered) ───────────────────── */
+
+.dropdownTrigger {
+  position: relative;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: var(--z-dropdown);
+  min-width: 180px;
+  padding: var(--space-2);
+  background-color: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  animation: menuShow var(--duration-fast) var(--ease-out);
+}
+
+.dropdownMenuLeft {
+  right: auto;
+  left: 0;
+}

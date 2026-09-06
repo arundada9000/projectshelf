@@ -1,0 +1,201 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  font-family: var(--font-sans);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-none);
+  white-space: nowrap;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-default),
+    color var(--duration-fast) var(--ease-default),
+    border-color var(--duration-fast) var(--ease-default),
+    box-shadow var(--duration-fast) var(--ease-default),
+    opacity var(--duration-fast) var(--ease-default);
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+.button:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+  pointer-events: none;
+}
+
+/* ── Sizes ──────────────────────────────────────────────── */
+
+.sm {
+  height: var(--button-height-sm);
+  padding: 0 var(--space-5);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+}
+
+.md {
+  height: var(--button-height-md);
+  padding: 0 var(--space-8);
+  font-size: var(--text-base);
+}
+
+.lg {
+  height: var(--button-height-lg);
+  padding: 0 var(--space-10);
+  font-size: var(--text-md);
+}
+
+/* ── Variants ───────────────────────────────────────────── */
+
+.primary {
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.primary:hover:not(:disabled) {
+  background-color: var(--color-accent-hover);
+}
+
+.primary:active:not(:disabled) {
+  background-color: var(--color-accent-active);
+}
+
+.secondary {
+  background-color: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.secondary:hover:not(:disabled) {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-border-strong);
+}
+
+.secondary:active:not(:disabled) {
+  background-color: var(--color-surface-active);
+}
+
+.ghost {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+}
+
+.ghost:hover:not(:disabled) {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.ghost:active:not(:disabled) {
+  background-color: var(--color-surface-active);
+}
+
+.danger {
+  background-color: var(--color-danger);
+  color: #ffffff;
+}
+
+.danger:hover:not(:disabled) {
+  background-color: var(--color-danger-hover);
+}
+
+.dangerGhost {
+  background-color: transparent;
+  color: var(--color-danger-text);
+}
+
+.dangerGhost:hover:not(:disabled) {
+  background-color: var(--color-danger-subtle);
+}
+
+/* ── Icon Button ────────────────────────────────────────── */
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  background-color: transparent;
+  border: none;
+  transition:
+    background-color var(--duration-fast) var(--ease-default),
+    color var(--duration-fast) var(--ease-default),
+    box-shadow var(--duration-fast) var(--ease-default);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.iconButton:hover:not(:disabled) {
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.iconButton:active:not(:disabled) {
+  background-color: var(--color-surface-active);
+}
+
+.iconButton:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+
+.iconButton:disabled {
+  cursor: not-allowed;
+  opacity: var(--opacity-disabled);
+}
+
+.iconSm {
+  width: var(--button-height-sm);
+  height: var(--button-height-sm);
+}
+
+.iconMd {
+  width: var(--button-height-md);
+  height: var(--button-height-md);
+}
+
+.iconLg {
+  width: var(--button-height-lg);
+  height: var(--button-height-lg);
+}
+
+/* ── Loading Spinner ────────────────────────────────────── */
+
+.spinner {
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading {
+  pointer-events: none;
+}
+
+.loading .buttonContent {
+  opacity: 0;
+}
+
+.loadingIndicator {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.buttonContent {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  transition: opacity var(--duration-fast) var(--ease-default);
+}
