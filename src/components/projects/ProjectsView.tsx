@@ -186,6 +186,36 @@ export function ProjectsView() {
     setModalOpen(true);
   }, []);
 
+  // Listen for global shortcut events
+  useEffect(() => {
+    const handleCreate = () => {
+      setEditingProject(null);
+      setModalOpen(true);
+    };
+
+    const handleToggle = () => {
+      setViewMode((prev) => {
+        const next = prev === 'grid' ? 'list' : 'grid';
+        updateSettings({ defaultView: next });
+        return next;
+      });
+    };
+
+    const handleSelectAll = () => {
+      setSelectedIds(new Set(projects.map((p) => p.id)));
+    };
+
+    document.addEventListener('projectshelf:create-project', handleCreate);
+    document.addEventListener('projectshelf:toggle-view', handleToggle);
+    document.addEventListener('projectshelf:select-all', handleSelectAll);
+
+    return () => {
+      document.removeEventListener('projectshelf:create-project', handleCreate);
+      document.removeEventListener('projectshelf:toggle-view', handleToggle);
+      document.removeEventListener('projectshelf:select-all', handleSelectAll);
+    };
+  }, [projects]);
+
   // ── Quick Actions ──────────────────────────────────────
 
   const handleQuickAction = useCallback(

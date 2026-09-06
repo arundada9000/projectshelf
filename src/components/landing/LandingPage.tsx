@@ -73,6 +73,37 @@ export interface LandingPageProps {
 }
 
 export function LandingPage({ onLaunchApp }: LandingPageProps) {
+  // Support Ctrl+K, Ctrl+F, etc. directly from the landing page
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const hasPrimary = e.ctrlKey || e.metaKey;
+      const key = e.key.toLowerCase();
+      const code = e.code?.toLowerCase();
+
+      // Ctrl+K or Ctrl+P: Launch and open command palette
+      if (hasPrimary && (key === 'k' || code === 'keyk' || key === 'p' || code === 'keyp')) {
+        e.preventDefault();
+        e.stopPropagation();
+        onLaunchApp();
+        return;
+      }
+
+      // Ctrl+F or /: Launch and focus search
+      if ((hasPrimary && (key === 'f' || code === 'keyf')) || key === '/') {
+        e.preventDefault();
+        e.stopPropagation();
+        onLaunchApp();
+        setTimeout(() => {
+          const input = document.querySelector<HTMLInputElement>('input[role="searchbox"], input[type="text"]');
+          input?.focus();
+        }, 100);
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
+  }, [onLaunchApp]);
   return (
     <div className={styles.landing}>
       {/* ── Hero ──────────────────────────────────────────── */}

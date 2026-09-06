@@ -1,20 +1,20 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 // ── Types ──────────────────────────────────────────────────
 
 export interface HotkeyAction {
   id: string;
   keyCombo: string;
-  handler: () => void;
+  handler: (e?: KeyboardEvent) => void;
   scope?: string;
   enabled?: boolean;
 }
 
 // ── Parse key combo ────────────────────────────────────────
 
-interface ParsedCombo {
+export interface ParsedCombo {
   ctrl: boolean;
   shift: boolean;
   alt: boolean;
@@ -22,39 +22,97 @@ interface ParsedCombo {
   key: string;
 }
 
-function parseKeyCombo(combo: string): ParsedCombo {
-  const parts = combo.toLowerCase().split('+');
+export function parseKeyCombo(combo: string): ParsedCombo {
+  const parts = combo
+    .toLowerCase()
+    .split('+')
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  const modifiers = new Set(parts.slice(0, -1));
+  const key = parts[parts.length - 1] ?? '';
+
   return {
-    ctrl: parts.includes('ctrl'),
-    shift: parts.includes('shift'),
-    alt: parts.includes('alt'),
-    meta: parts.includes('meta') || parts.includes('cmd'),
-    key: parts[parts.length - 1],
+    ctrl: modifiers.has('ctrl') || modifiers.has('control'),
+    shift: modifiers.has('shift'),
+    alt: modifiers.has('alt'),
+    meta: modifiers.has('meta') || modifiers.has('cmd') || modifiers.has('command'),
+    key,
   };
 }
 
-function matchesEvent(parsed: ParsedCombo, e: KeyboardEvent): boolean {
-  const key = e.key.toLowerCase();
-  // Handle special keys
-  const eventKey =
-    key === '/' ? '/'
-    : key === '?' ? '?'
-    : key === ',' ? ','
-    : key === 'escape' ? 'escape'
-    : key === 'delete' ? 'delete'
-    : key === 'backspace' ? 'backspace'
-    : key === 'enter' ? 'enter'
-    : key === 'tab' ? 'tab'
-    : key === ' ' ? 'space'
-    : key === 'f1' ? 'f1'
-    : key;
+export function matchesEvent(parsed: ParsedCombo, e: KeyboardEvent): boolean {
+  // Primary modifier matching:
+  // On Windows/Linux, user presses Ctrl (e.ctrlKey).
+  // On Mac, user presses Cmd (e.metaKey).
+  // If the combo specifies 'ctrl' or 'meta'/'cmd', we allow either (cross-platform primary modifier).
+  const wantsPrimary = parsed.ctrl || parsed.meta;
+  const hasPrimary = e.ctrlKey || e.metaKey;
 
-  return (
-    parsed.ctrl === (e.ctrlKey || e.metaKey) &&
-    parsed.shift === e.shiftKey &&
-    parsed.alt === e.altKey &&
-    parsed.key === eventKey
-  );
+  if (wantsPrimary) {
+    if (!hasPrimary) return false;
+  } else {
+    // If not wanting ctrl/meta, ensure neither is pressed
+    if (e.ctrlKey || e.metaKey) return false;
+  }
+
+  // Shift modifier matching:
+  // If the target key itself is '?' (which requires Shift on US keyboards),
+  // allow either parsed.shift or e.key === '?' directly.
+  if (parsed.key === '?') {
+    if (!e.shiftKey && e.key !== '?') return false;
+  } else {
+    if (parsed.shift !== e.shiftKey) return false;
+  }
+
+  // Alt modifier matching
+  if (parsed.alt !== e.altKey) return false;
+
+  // Key matching
+  const eventKey = e.key.toLowerCase();
+  const targetKey = parsed.key.toLowerCase();
+
+  // 1. Exact match on eventKey
+  if (eventKey === targetKey) return true;
+
+  // 2. Special character normalization
+  if (targetKey === '?' && (eventKey === '?' || (e.shiftKey && eventKey === '/'))) return true;
+  if (targetKey === '/' && eventKey === '/') return true;
+  if (targetKey === ',' && eventKey === ',') return true;
+  if (targetKey === '.' && eventKey === '.') return true;
+  if ((targetKey === 'esc' || targetKey === 'escape') && eventKey === 'escape') return true;
+  if ((targetKey === 'del' || targetKey === 'delete') && eventKey === 'delete') return true;
+  if (targetKey === 'backspace' && eventKey === 'backspace') return true;
+  if ((targetKey === 'enter' || targetKey === 'return') && eventKey === 'enter') return true;
+  if ((targetKey === 'space' || targetKey === ' ') && (eventKey === ' ' || eventKey === 'space')) return true;
+  if (targetKey === 'tab' && eventKey === 'tab') return true;
+
+  // 3. Function keys F1-F12
+  if (/^f\d{1,2}$/.test(targetKey) && eventKey === targetKey) {
+    return true;
+  }
+
+  // 4. Physical code fallback (crucial for Windows/Chrome with Ctrl+key combos and foreign keyboards)
+  if (e.code) {
+    const code = e.code.toLowerCase();
+
+    // Letter keys: 'KeyK' -> 'keyk' matches target 'k'
+    if (targetKey.length === 1 && targetKey >= 'a' && targetKey <= 'z') {
+      if (code === `key${targetKey}`) return true;
+    }
+
+    // Number keys: 'Digit1' -> 'digit1' or 'Numpad1' -> 'numpad1' matches target '1'
+    if (targetKey.length === 1 && targetKey >= '0' && targetKey <= '9') {
+      if (code === `digit${targetKey}` || code === `numpad${targetKey}`) return true;
+    }
+
+    // Slash and comma keys
+    if (targetKey === '/' && code === 'slash') return true;
+    if (targetKey === ',' && code === 'comma') return true;
+    if (targetKey === '.' && code === 'period') return true;
+  }
+
+  return false;
 }
 
 // ── useHotkeys Hook ────────────────────────────────────────
@@ -65,43 +123,44 @@ export function useHotkeys(actions: HotkeyAction[]) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip if user is typing in an input/textarea/contenteditable
-      const target = e.target as HTMLElement;
-      const tagName = target.tagName.toLowerCase();
-      if (
+      const target = e.target as HTMLElement | null;
+      const tagName = target?.tagName?.toLowerCase();
+      const isInput =
         tagName === 'input' ||
         tagName === 'textarea' ||
         tagName === 'select' ||
-        target.isContentEditable
-      ) {
-        // Allow some global shortcuts even when focused on input
-        const combo = actionsRef.current.find((a) => {
-          if (a.enabled === false) return false;
-          const parsed = parseKeyCombo(a.keyCombo);
-          return matchesEvent(parsed, e) && (parsed.ctrl || parsed.alt || a.keyCombo === 'escape');
-        });
-        if (combo) {
-          e.preventDefault();
-          e.stopPropagation();
-          combo.handler();
-        }
-        return;
-      }
+        target?.isContentEditable === true;
 
       for (const action of actionsRef.current) {
         if (action.enabled === false) continue;
         const parsed = parseKeyCombo(action.keyCombo);
+
         if (matchesEvent(parsed, e)) {
+          // If in an input, don't hijack standard text operations like Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+Z, Ctrl+X
+          if (isInput) {
+            const isTextEditingKey =
+              (parsed.ctrl || parsed.meta) &&
+              ['a', 'c', 'v', 'x', 'z', 'y'].includes(parsed.key.toLowerCase());
+
+            if (isTextEditingKey) {
+              continue; // Allow user to copy/paste/select in input
+            }
+          }
+
+          // Intercept and prevent browser default (e.g. Chrome Omnibox for Ctrl+K, Find for Ctrl+F, New Window for Ctrl+N)
           e.preventDefault();
           e.stopPropagation();
-          action.handler();
+          action.handler(e);
           return;
         }
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    // Use capture phase on window so that browser defaults (like Ctrl+K or Ctrl+F in Chrome) can be prevented
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+    };
   }, []);
 }
 
@@ -118,8 +177,10 @@ export function formatKeyCombo(combo: string): string {
         case 'alt': return 'Alt';
         case 'meta':
         case 'cmd': return 'Cmd';
-        case 'escape': return 'Esc';
-        case 'delete': return 'Del';
+        case 'escape':
+        case 'esc': return 'Esc';
+        case 'delete':
+        case 'del': return 'Del';
         case 'backspace': return 'Bksp';
         case 'enter': return 'Enter';
         case 'space': return 'Space';

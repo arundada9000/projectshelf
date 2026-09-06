@@ -79,24 +79,75 @@ function AppInner() {
 
   // ── Global Hotkeys ─────────────────────────────────────
 
+  const focusSearchInput = useCallback(() => {
+    setActivePage('projects');
+    setTimeout(() => {
+      const searchInput = document.querySelector<HTMLInputElement>(
+        'input[role="searchbox"], input[type="text"][placeholder*="Search"], input[placeholder*="Search"]'
+      );
+      if (searchInput) {
+        searchInput.focus();
+        searchInput.select();
+      }
+    }, 60);
+  }, []);
+
   const hotkeys: HotkeyAction[] = useMemo(
     () => [
       {
-        id: 'command-palette',
+        id: 'command-palette-k',
         keyCombo: 'ctrl+k',
-        handler: () => setPaletteOpen(true),
+        handler: () => setPaletteOpen((prev) => !prev),
       },
       {
-        id: 'shortcuts',
+        id: 'command-palette-p',
+        keyCombo: 'ctrl+p',
+        handler: () => setPaletteOpen((prev) => !prev),
+      },
+      {
+        id: 'focus-search-ctrl-f',
+        keyCombo: 'ctrl+f',
+        handler: focusSearchInput,
+      },
+      {
+        id: 'focus-search-slash',
+        keyCombo: '/',
+        handler: focusSearchInput,
+      },
+      {
+        id: 'shortcuts-shift-question',
         keyCombo: 'shift+?',
-        handler: () => setShortcutsOpen(true),
+        handler: () => setShortcutsOpen((prev) => !prev),
+      },
+      {
+        id: 'shortcuts-question',
+        keyCombo: '?',
+        handler: () => setShortcutsOpen((prev) => !prev),
       },
       {
         id: 'new-project',
         keyCombo: 'ctrl+n',
         handler: () => {
           setActivePage('projects');
-          document.dispatchEvent(new CustomEvent('projectshelf:create-project'));
+          setTimeout(() => {
+            document.dispatchEvent(new CustomEvent('projectshelf:create-project'));
+          }, 60);
+        },
+      },
+      {
+        id: 'toggle-view',
+        keyCombo: 'ctrl+shift+v',
+        handler: () => {
+          document.dispatchEvent(new CustomEvent('projectshelf:toggle-view'));
+        },
+      },
+      {
+        id: 'select-all',
+        keyCombo: 'ctrl+a',
+        handler: () => {
+          if (activePage === 'projects') {
+            document.dispatchEvent(new CustomEvent('projectshelf:select-all'));
+          }
         },
       },
       {
@@ -129,16 +180,8 @@ function AppInner() {
         keyCombo: 'alt+4',
         handler: () => setActivePage('settings'),
       },
-      {
-        id: 'focus-search',
-        keyCombo: '/',
-        handler: () => {
-          const searchInput = document.querySelector<HTMLInputElement>('[role="searchbox"]');
-          searchInput?.focus();
-        },
-      },
     ],
-    []
+    [activePage, focusSearchInput]
   );
 
   useHotkeys(hotkeys);
