@@ -8,6 +8,14 @@ rules.md
 design.md
 logic.md
 
+# ── AI & Agent Files (Personal / Auto-generated) ─────────────
+CLAUDE.md
+claude.md
+AGENTS.md
+agents.md
+.claude/
+.agents/
+
 # ── Dependencies ─────────────────────────────────────────────
 /node_modules
 /.pnp
