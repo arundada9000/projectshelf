@@ -150,11 +150,13 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   helpText?: string;
   error?: string;
   required?: boolean;
+  /** Monospace treatment for command templates and other code-like content. */
+  mono?: boolean;
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   (
-    { label, helpText, error, required, className, id: externalId, ...props },
+    { label, helpText, error, required, mono, className, id: externalId, ...props },
     ref
   ) => {
     const autoId = useId();
@@ -171,7 +173,9 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         <textarea
           ref={ref}
           id={textareaId}
-          className={`${styles.textarea} ${error ? styles.inputError : ''} ${className ?? ''}`}
+          className={`${styles.textarea} ${mono ? styles.textareaMono : ''} ${
+            error ? styles.inputError : ''
+          } ${className ?? ''}`}
           aria-invalid={!!error}
           aria-describedby={
             error ? `${textareaId}-error` : helpText ? `${textareaId}-help` : undefined

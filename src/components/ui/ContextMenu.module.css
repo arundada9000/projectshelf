@@ -156,3 +156,41 @@
   right: auto;
   left: 0;
 }
+
+/* ── Responsive ─────────────────────────────────────────── */
+
+/* On touch screens the menu anchors to the bottom as a sheet, so it is
+   never clipped by the viewport edge and stays within thumb reach. */
+@media (max-width: 767px) {
+  .menu {
+    position: fixed;
+    left: var(--space-5) !important;
+    right: var(--space-5);
+    top: auto !important;
+    bottom: calc(56px + var(--space-5) + env(safe-area-inset-bottom, 0px));
+    min-width: 0;
+    max-width: none;
+    max-height: 60dvh;
+    padding: var(--space-3);
+    animation: menuSheetShow var(--duration-moderate) var(--ease-out);
+  }
+
+  @keyframes menuSheetShow {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .menuItem {
+    min-height: var(--touch-target-min);
+  }
+
+  .menuItemShortcut {
+    display: none;
+  }
+}

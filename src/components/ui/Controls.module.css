@@ -176,8 +176,15 @@
 
 /* ── Tag ────────────────────────────────────────────────── */
 
+.tagWrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .tag {
   display: inline-flex;
+  font-family: inherit;
   align-items: center;
   gap: var(--space-2);
   height: 24px;
@@ -194,6 +201,12 @@
   transition:
     background-color var(--duration-fast) var(--ease-default),
     border-color var(--duration-fast) var(--ease-default);
+}
+
+.tagClickable:focus-visible {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
 }
 
 .tagClickable {

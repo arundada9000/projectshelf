@@ -42,6 +42,10 @@ export type { ToastData, ToastType } from './Toast';
 export { ContextMenu, DropdownMenu } from './ContextMenu';
 export type { ContextMenuProps, DropdownMenuProps, MenuItemData, MenuEntry } from './ContextMenu';
 
+// Shortcut Recorder
+export { ShortcutRecorder } from './ShortcutRecorder';
+export type { ShortcutRecorderProps } from './ShortcutRecorder';
+
 // ComboBox
 export { ComboBox } from './ComboBox';
 export type { ComboBoxProps, ComboBoxOption } from './ComboBox';

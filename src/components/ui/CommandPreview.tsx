@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Copy, Check } from 'lucide-react';
+import { copyText } from '@/lib/clipboard';
 import styles from './Select.module.css';
 
 // ── Command Preview ────────────────────────────────────────
@@ -23,11 +24,12 @@ export function CommandPreview({
 
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(commands.join('\n'));
+      const copied = await copyText(commands.join('\n'));
+      if (!copied) return;
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback: do nothing
+      // The text stays on screen for manual selection.
     }
   }, [commands]);
 

@@ -10,11 +10,20 @@ export interface SwitchProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   label?: string;
+  /** Accessible name when the switch has no visible label. */
+  ariaLabel?: string;
   disabled?: boolean;
   id?: string;
 }
 
-export function Switch({ checked, onChange, label, disabled, id: externalId }: SwitchProps) {
+export function Switch({
+  checked,
+  onChange,
+  label,
+  ariaLabel,
+  disabled,
+  id: externalId,
+}: SwitchProps) {
   const autoId = useId();
   const switchId = externalId ?? autoId;
 
@@ -25,6 +34,7 @@ export function Switch({ checked, onChange, label, disabled, id: externalId }: S
         role="switch"
         id={switchId}
         aria-checked={checked}
+        aria-label={label ? undefined : ariaLabel}
         disabled={disabled}
         className={styles.switchTrack}
         onClick={() => onChange(!checked)}
@@ -142,28 +152,37 @@ export function Tag({ children, active, removable, onClick, onRemove, className 
     .filter(Boolean)
     .join(' ');
 
-  return (
-    <span
-      className={classes}
-      onClick={onClick}
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
+  const removeButton = removable && onRemove && (
+    <button
+      type="button"
+      className={styles.tagRemoveBtn}
+      onClick={(e) => {
+        e.stopPropagation();
+        onRemove();
+      }}
+      aria-label="Remove tag"
     >
-      {children}
-      {removable && onRemove && (
-        <button
-          type="button"
-          className={styles.tagRemoveBtn}
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove();
-          }}
-          aria-label="Remove tag"
-        >
-          <X size={10} />
+      <X size={10} />
+    </button>
+  );
+
+  // A clickable tag is a real button so keyboard and assistive technology
+  // get the behaviour for free. `active` is a toggle, hence aria-pressed.
+  if (onClick) {
+    return (
+      <span className={styles.tagWrapper}>
+        <button type="button" className={classes} onClick={onClick} aria-pressed={active}>
+          {children}
         </button>
-      )}
+        {removeButton}
+      </span>
+    );
+  }
+
+  return (
+    <span className={classes}>
+      {children}
+      {removeButton}
     </span>
   );
 }

@@ -1,0 +1,124 @@
+/* ============================================================
+   Shortcut Recorder
+   ============================================================ */
+
+.recorder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.recorderRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.recorderField {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 148px;
+  min-height: var(--input-height-md);
+  padding: 0 var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-default),
+    background-color var(--duration-fast) var(--ease-default),
+    box-shadow var(--duration-fast) var(--ease-default);
+}
+
+.recorderField:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-hover);
+}
+
+.recorderField:focus-visible {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
+
+.recorderField:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+/* Recording: a steady accent ring, no blinking. */
+.recorderFieldActive {
+  border-color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
+
+.recorderFieldConflict {
+  border-color: var(--color-danger);
+}
+
+.recorderPrompt {
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+.recorderEmpty {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.recorderKeys {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.recorderKeys kbd {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-alt);
+  color: var(--color-text-secondary);
+}
+
+.recorderAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--button-height-sm);
+  height: var(--button-height-sm);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    color var(--duration-fast) var(--ease-default),
+    background-color var(--duration-fast) var(--ease-default);
+}
+
+.recorderAction:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
+}
+
+.recorderAction:focus-visible {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
+
+.recorderConflict {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-danger-text);
+}

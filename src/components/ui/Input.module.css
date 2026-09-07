@@ -232,6 +232,15 @@
   color: var(--color-text-muted);
 }
 
+/* Command templates and other code-like content. */
+.textareaMono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  white-space: pre;
+  overflow-x: auto;
+}
+
 .textarea:hover:not(:disabled):not(:focus) {
   border-color: var(--color-border-strong);
 }

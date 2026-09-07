@@ -40,17 +40,18 @@ export function ComboBox({
   className,
 }: ComboBoxProps) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
+  // null means "showing the selected value"; a string is what the user typed.
+  const [draft, setDraft] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const autoId = useId();
+  const listboxId = `${autoId}-listbox`;
 
-  // Sync input text with value
-  useEffect(() => {
-    const selected = options.find((o) => o.value === value);
-    setQuery(selected?.label ?? value);
-  }, [value, options]);
+  // Derived rather than mirrored into state, so the field cannot drift
+  // out of sync with the value it is bound to.
+  const selectedLabel = options.find((o) => o.value === value)?.label ?? value;
+  const query = draft ?? selectedLabel;
 
   // Filter options
   const filtered = useMemo(() => {
@@ -70,14 +71,13 @@ export function ComboBox({
     const handleClick = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
-        // Reset query to selected value's label
-        const selected = options.find((o) => o.value === value);
-        setQuery(selected?.label ?? value);
+        // Abandoning the field discards what was typed.
+        setDraft(null);
       }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [open, options, value]);
+  }, [open]);
 
   // Keyboard navigation
   const handleKeyDown = useCallback(
@@ -105,21 +105,20 @@ export function ComboBox({
           e.preventDefault();
           if (activeIndex < filtered.length) {
             onChange(filtered[activeIndex].value);
-            setQuery(filtered[activeIndex].label);
           } else if (showCreate) {
             onCreate?.(query.trim());
           }
+          setDraft(null);
           setOpen(false);
           break;
         case 'Escape':
           e.preventDefault();
           setOpen(false);
-          const selected = options.find((o) => o.value === value);
-          setQuery(selected?.label ?? value);
+          setDraft(null);
           break;
       }
     },
-    [open, filtered, activeIndex, showCreate, query, onChange, onCreate, options, value]
+    [open, filtered, activeIndex, showCreate, query, onChange, onCreate]
   );
 
   return (
@@ -136,7 +135,7 @@ export function ComboBox({
           className={`${styles.comboInput} ${open ? styles.comboInputOpen : ''}`}
           value={query}
           onChange={(e) => {
-            setQuery(e.target.value);
+            setDraft(e.target.value);
             setActiveIndex(0);
             if (!open) setOpen(true);
           }}
@@ -147,6 +146,7 @@ export function ComboBox({
           autoComplete="off"
           role="combobox"
           aria-expanded={open}
+          aria-controls={listboxId}
           aria-autocomplete="list"
         />
         <ChevronDown
@@ -156,7 +156,7 @@ export function ComboBox({
       </div>
 
       {open && (
-        <div className={styles.comboDropdown} role="listbox">
+        <div id={listboxId} className={styles.comboDropdown} role="listbox">
           {filtered.length === 0 && !showCreate && (
             <div className={styles.comboEmpty}>No matches found</div>
           )}
@@ -170,7 +170,7 @@ export function ComboBox({
               onMouseEnter={() => setActiveIndex(index)}
               onClick={() => {
                 onChange(option.value);
-                setQuery(option.label);
+                setDraft(null);
                 setOpen(false);
               }}
             >
@@ -187,11 +187,12 @@ export function ComboBox({
               onMouseEnter={() => setActiveIndex(filtered.length)}
               onClick={() => {
                 onCreate?.(query.trim());
+                setDraft(null);
                 setOpen(false);
               }}
             >
               <Plus size={14} />
-              Create "{query.trim()}"
+              Create {'“'}{query.trim()}{'”'}
             </button>
           )}
         </div>
