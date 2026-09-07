@@ -500,6 +500,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   defaultEditorId: 'editor-vscode',
   defaultFileManagerId: 'tool-explorer',
   soundEnabled: false,
+  hapticsEnabled: true,
   confirmDestructive: true,
   firstRunCompleted: false,
   sortField: 'updatedAt',

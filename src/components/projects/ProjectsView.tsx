@@ -56,6 +56,7 @@ import {
 } from '@/lib/filters';
 import { APP_EVENTS, emitAppEvent } from '@/lib/actions';
 import { playSound } from '@/lib/sound';
+import { haptic } from '@/lib/haptics';
 import {
   loadToolContext,
   buildCommandForProject,
@@ -282,6 +283,7 @@ export function ProjectsView() {
         return next;
       });
       setLastSelectedId(id);
+      haptic('selection');
     },
     [filtered, lastSelectedId]
   );
@@ -310,10 +312,12 @@ export function ProjectsView() {
           await updateProject(project);
           toast('Project updated', 'success');
           playSound('save');
+          haptic('action');
         } else {
           await addProject(project);
           toast('Project added', 'success');
           playSound('added');
+          haptic('action');
         }
         await loadData();
       } catch {
@@ -352,6 +356,7 @@ export function ProjectsView() {
           'success'
         );
         playSound('removed');
+        haptic('danger');
         clearSelection();
         await loadData();
       } catch {

@@ -422,7 +422,9 @@ export async function deleteTag(id: string): Promise<void> {
 export async function getSettings(): Promise<UserSettings> {
   const db = await getDB();
   const settings = await db.get(STORES.settings, 'user');
-  return settings ?? DEFAULT_SETTINGS;
+  // Merge over the defaults so records written by an earlier version pick
+  // up newly added fields without a schema migration.
+  return settings ? { ...DEFAULT_SETTINGS, ...settings } : DEFAULT_SETTINGS;
 }
 
 export async function updateSettings(settings: Partial<UserSettings>): Promise<UserSettings> {

@@ -14,6 +14,7 @@ import { exportAllData, downloadJSON } from '@/lib/db/import-export';
 import { getSettings } from '@/lib/db';
 import { applyAppearance, startSystemThemeWatch } from '@/lib/appearance';
 import { setSoundEnabled } from '@/lib/sound';
+import { setHapticsEnabled } from '@/lib/haptics';
 
 // ── Routes ─────────────────────────────────────────────────
 
@@ -185,6 +186,7 @@ function AppFrame({ children }: { children: React.ReactNode }) {
       .then((saved) => {
         if (cancelled) return;
         setSoundEnabled(saved.soundEnabled);
+        setHapticsEnabled(saved.hapticsEnabled);
         applyAppearance({
           theme: saved.theme,
           font: saved.font,

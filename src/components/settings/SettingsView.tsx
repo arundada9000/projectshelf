@@ -54,6 +54,7 @@ import {
 import { Button, Switch, Select, Modal, useToast } from '@/components/ui';
 import { applyAppearance } from '@/lib/appearance';
 import { setSoundEnabled } from '@/lib/sound';
+import { setHapticsEnabled } from '@/lib/haptics';
 import { CollectionSection, type CollectionField } from './sections/CollectionSection';
 import { CommandsSection } from './sections/CommandsSection';
 import { ShortcutsSection } from './sections/ShortcutsSection';
@@ -216,6 +217,7 @@ export function SettingsView() {
       setSettings(updated);
 
       setSoundEnabled(updated.soundEnabled);
+      setHapticsEnabled(updated.hapticsEnabled);
 
       // Apply to the document and mirror to localStorage so the choice
       // survives a reload.
@@ -407,6 +409,20 @@ export function SettingsView() {
                   <Switch
                     checked={settings.soundEnabled}
                     onChange={(v) => update({ soundEnabled: v })}
+                  />
+                </div>
+              </div>
+              <div className={styles.settingsRow}>
+                <div className={styles.settingsRowInfo}>
+                  <span className={styles.settingsRowLabel}>Haptic feedback</span>
+                  <span className={styles.settingsRowDesc}>
+                    Vibrate briefly on meaningful actions (touch devices only)
+                  </span>
+                </div>
+                <div className={styles.settingsRowControl}>
+                  <Switch
+                    checked={settings.hapticsEnabled}
+                    onChange={(v) => update({ hapticsEnabled: v })}
                   />
                 </div>
               </div>

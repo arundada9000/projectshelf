@@ -177,6 +177,7 @@ export interface UserSettings {
   defaultEditorId: string;
   defaultFileManagerId: string;
   soundEnabled: boolean;
+  hapticsEnabled: boolean;
   confirmDestructive: boolean;
   firstRunCompleted: boolean;
   sortField: SortField;

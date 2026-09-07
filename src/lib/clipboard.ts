@@ -5,6 +5,7 @@
    ============================================================ */
 
 import { playSound } from '@/lib/sound';
+import { haptic } from '@/lib/haptics';
 
 /**
  * Copy text, falling back to a hidden selection when the async
@@ -21,6 +22,7 @@ export async function copyText(text: string): Promise<boolean> {
     try {
       await navigator.clipboard.writeText(text);
       playSound('copy');
+      haptic('action');
       return true;
     } catch {
       // Fall through to the selection-based path below.
@@ -28,7 +30,10 @@ export async function copyText(text: string): Promise<boolean> {
   }
 
   const ok = copyViaSelection(text);
-  if (ok) playSound('copy');
+  if (ok) {
+    playSound('copy');
+    haptic('action');
+  }
   return ok;
 }
 
