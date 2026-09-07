@@ -16,14 +16,14 @@ import {
   Layers,
   FolderArchive,
 } from 'lucide-react';
-import type { ViewMode, SortField, SortDirection, ProjectStatus } from '@/lib/db/schema';
-import { DEFAULT_STATUSES } from '@/lib/db/presets';
+import type { ViewMode, SortField, SortDirection, Project } from '@/lib/db/schema';
+import type { ProjectFilters } from '@/lib/filters';
+import { FilterBar } from './FilterBar';
 import {
   SearchInput,
   Button,
   IconButton,
   SegmentedControl,
-  Tag,
 } from '@/components/ui';
 import { DropdownMenu } from '@/components/ui';
 import type { MenuEntry } from '@/components/ui';
@@ -49,8 +49,9 @@ export interface ProjectToolbarProps {
   sortField: SortField;
   sortDirection: SortDirection;
   onSortChange: (field: SortField, direction: SortDirection) => void;
-  statusFilter: ProjectStatus | null;
-  onStatusFilterChange: (status: ProjectStatus | null) => void;
+  filters: ProjectFilters;
+  onFiltersChange: (filters: ProjectFilters) => void;
+  allProjects: Project[];
   totalCount: number;
   filteredCount: number;
   onCreateProject: () => void;
@@ -64,8 +65,9 @@ export function ProjectToolbar({
   sortField,
   sortDirection,
   onSortChange,
-  statusFilter,
-  onStatusFilterChange,
+  filters,
+  onFiltersChange,
+  allProjects,
   totalCount,
   filteredCount,
   onCreateProject,
@@ -100,20 +102,11 @@ export function ProjectToolbar({
           shortcutHint="/"
         />
 
-        {/* Status filter chips */}
-        <div className={styles.filterChips}>
-          {DEFAULT_STATUSES.map((status) => (
-            <Tag
-              key={status.id}
-              active={statusFilter === status.id}
-              onClick={() =>
-                onStatusFilterChange(statusFilter === status.id ? null : status.id)
-              }
-            >
-              {status.label}
-            </Tag>
-          ))}
-        </div>
+        <FilterBar
+          filters={filters}
+          onChange={onFiltersChange}
+          projects={allProjects}
+        />
       </div>
 
       <div className={styles.toolbarRight}>
@@ -170,6 +163,7 @@ export interface SelectionToolbarProps {
   onCopyPaths: () => void;
   onCreateLaunchSet: () => void;
   onBulkStatus: () => void;
+  onBatchCommands?: () => void;
   onDelete: () => void;
 }
 
@@ -182,6 +176,7 @@ export function SelectionToolbar({
   onCopyPaths,
   onCreateLaunchSet,
   onBulkStatus,
+  onBatchCommands,
   onDelete,
 }: SelectionToolbarProps) {
   if (count === 0) return null;
@@ -204,6 +199,11 @@ export function SelectionToolbar({
         <IconButton size="sm" label="Copy paths (Ctrl+Shift+C)" onClick={onCopyPaths}>
           <Copy size={15} />
         </IconButton>
+        {onBatchCommands && (
+          <IconButton size="sm" label="Batch commands" onClick={onBatchCommands}>
+            <Terminal size={15} style={{ opacity: 0.8 }} />
+          </IconButton>
+        )}
         <IconButton size="sm" label="Create launch set (Ctrl+Shift+L)" onClick={onCreateLaunchSet}>
           <Layers size={15} />
         </IconButton>

@@ -1,0 +1,291 @@
+/* ============================================================
+   Filter Bar
+   ============================================================ */
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.filterTriggerWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* ── Trigger ────────────────────────────────────────────── */
+
+.filterTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--button-height-sm);
+  padding: 0 var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color var(--duration-fast) var(--ease-default),
+    color var(--duration-fast) var(--ease-default),
+    background-color var(--duration-fast) var(--ease-default);
+}
+
+.filterTrigger:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+}
+
+.filterTrigger:focus-visible {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
+
+.filterTriggerActive {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background-color: var(--color-accent-subtle);
+}
+
+.filterCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+}
+
+/* ── Panel ──────────────────────────────────────────────── */
+
+.filterPanel {
+  position: absolute;
+  top: calc(100% + var(--space-3));
+  left: 0;
+  z-index: var(--z-popover);
+  width: 320px;
+  max-height: 70dvh;
+  overflow-y: auto;
+  padding: var(--space-7);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface-elevated);
+  box-shadow: var(--shadow-overlay);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-9);
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.filterGroupTitle {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.filterOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* ── Tri-state conditions ───────────────────────────────── */
+
+.filterConditions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.condition {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  width: 100%;
+  min-height: 34px;
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color var(--duration-fast) var(--ease-default),
+    background-color var(--duration-fast) var(--ease-default);
+}
+
+.condition:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.condition:focus-visible {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
+
+.conditionActive {
+  border-color: var(--color-accent);
+  color: var(--color-text-primary);
+}
+
+.conditionState {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-active);
+  color: var(--color-text-muted);
+}
+
+.conditionActive .conditionState {
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.conditionLabel {
+  flex: 1;
+}
+
+.conditionValue {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.filterPanelFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+/* ── Active chips ───────────────────────────────────────── */
+
+.activeFilters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.activeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 26px;
+  padding: 0 var(--space-3) 0 var(--space-6);
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+
+.activeChipRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: var(--radius-full);
+  background-color: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity var(--duration-fast) var(--ease-default);
+}
+
+.activeChipRemove:hover {
+  opacity: 1;
+  background-color: var(--color-surface-active);
+}
+
+.activeChipRemove:focus-visible {
+  outline: none;
+  opacity: 1;
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.clearAll {
+  border: none;
+  background: none;
+  padding: var(--space-2) var(--space-3);
+  font-family: inherit;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.clearAll:hover {
+  color: var(--color-text-primary);
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .filterBar {
+    width: 100%;
+  }
+
+  /* Full-width sheet rather than a narrow popover off the left edge. */
+  .filterPanel {
+    position: fixed;
+    left: var(--space-5);
+    right: var(--space-5);
+    top: auto;
+    bottom: calc(56px + var(--space-5) + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-height: 66dvh;
+  }
+
+  .activeFilters {
+    width: 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: var(--space-2);
+  }
+
+  .activeFilters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .activeChip,
+  .clearAll {
+    flex-shrink: 0;
+  }
+}

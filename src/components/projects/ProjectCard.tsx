@@ -40,10 +40,11 @@ function shortenPath(path: string, maxLen = 40): string {
 export interface ProjectCardProps {
   project: Project;
   selected: boolean;
-  onSelect: (id: string, multi: boolean) => void;
+  onSelect: (id: string, multi: boolean, shift?: boolean) => void;
   onOpen: (project: Project) => void;
   onContextMenu?: (e: React.MouseEvent, project: Project) => void;
   onQuickAction?: (action: string, project: Project) => void;
+  onTagClick?: (tag: string) => void;
 }
 
 export function ProjectCard({
@@ -53,21 +54,25 @@ export function ProjectCard({
   onOpen,
   onContextMenu,
   onQuickAction,
+  onTagClick,
 }: ProjectCardProps) {
   const status = DEFAULT_STATUSES.find((s) => s.id === project.status);
 
   const handleClick = (e: React.MouseEvent) => {
     if (e.ctrlKey || e.metaKey) {
-      onSelect(project.id, true);
+      onSelect(project.id, true, false);
+    } else if (e.shiftKey) {
+      onSelect(project.id, true, true);
     } else if (e.detail === 2) {
       onOpen(project);
     } else {
-      onSelect(project.id, false);
+      onSelect(project.id, false, false);
     }
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     onContextMenu?.(e, project);
   };
 
@@ -124,9 +129,17 @@ export function ProjectCard({
 
       {/* Tags */}
       {project.tags.length > 0 && (
-        <div className={styles.cardTags}>
+        <div
+          className={styles.cardTags}
+          onClick={(e) => e.stopPropagation()}
+        >
           {project.tags.slice(0, 3).map((tag) => (
-            <Tag key={tag}>{tag}</Tag>
+            <Tag
+              key={tag}
+              onClick={() => onTagClick?.(tag)}
+            >
+              {tag}
+            </Tag>
           ))}
           {project.tags.length > 3 && (
             <Tag>+{project.tags.length - 3}</Tag>
@@ -185,10 +198,11 @@ export function ProjectCard({
 export interface ProjectRowProps {
   project: Project;
   selected: boolean;
-  onSelect: (id: string, multi: boolean) => void;
+  onSelect: (id: string, multi: boolean, shift?: boolean) => void;
   onOpen: (project: Project) => void;
   onContextMenu?: (e: React.MouseEvent, project: Project) => void;
   onQuickAction?: (action: string, project: Project) => void;
+  onTagClick?: (tag: string) => void;
 }
 
 export function ProjectRow({
@@ -198,16 +212,19 @@ export function ProjectRow({
   onOpen,
   onContextMenu,
   onQuickAction,
+  onTagClick,
 }: ProjectRowProps) {
   const status = DEFAULT_STATUSES.find((s) => s.id === project.status);
 
   const handleClick = (e: React.MouseEvent) => {
     if (e.ctrlKey || e.metaKey) {
-      onSelect(project.id, true);
+      onSelect(project.id, true, false);
+    } else if (e.shiftKey) {
+      onSelect(project.id, true, true);
     } else if (e.detail === 2) {
       onOpen(project);
     } else {
-      onSelect(project.id, false);
+      onSelect(project.id, false, false);
     }
   };
 
@@ -215,7 +232,11 @@ export function ProjectRow({
     <div
       className={`${styles.row} ${selected ? styles.rowSelected : ''}`}
       onClick={handleClick}
-      onContextMenu={(e) => { e.preventDefault(); onContextMenu?.(e, project); }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onContextMenu?.(e, project);
+      }}
       role="option"
       aria-selected={selected}
       tabIndex={0}
@@ -241,9 +262,17 @@ export function ProjectRow({
       </div>
 
       {project.tags.length > 0 && (
-        <div className={styles.rowTags}>
+        <div
+          className={styles.rowTags}
+          onClick={(e) => e.stopPropagation()}
+        >
           {project.tags.slice(0, 2).map((tag) => (
-            <Tag key={tag}>{tag}</Tag>
+            <Tag
+              key={tag}
+              onClick={() => onTagClick?.(tag)}
+            >
+              {tag}
+            </Tag>
           ))}
           {project.tags.length > 2 && <Tag>+{project.tags.length - 2}</Tag>}
         </div>

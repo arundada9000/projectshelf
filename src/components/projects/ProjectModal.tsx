@@ -2,9 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { FolderOpen, Globe, GitBranch } from 'lucide-react';
-import type { Project, ProjectStatus } from '@/lib/db/schema';
+import type {
+  Project,
+  ProjectStatus,
+  TerminalDefinition,
+  EditorDefinition,
+} from '@/lib/db/schema';
 import { DEFAULT_STATUSES } from '@/lib/db/presets';
-import { generateId } from '@/lib/db';
+import { generateId, getAllTerminals, getAllEditors } from '@/lib/db';
 import {
   Modal,
   Input,
@@ -37,6 +42,7 @@ function createEmptyProject(): Project {
     language: '',
     packageManager: '',
     devCommand: '',
+    branch: '',
     notes: '',
     isPinned: false,
     icon: '',
@@ -47,31 +53,54 @@ function createEmptyProject(): Project {
   };
 }
 
-export function ProjectModal({
+export function ProjectModal(props: ProjectModalProps) {
+  // Remounting on open (and when switching project) gives the form its
+  // initial values without synchronising state from an effect.
+  if (!props.open) return null;
+  return <ProjectModalBody key={props.project?.id ?? 'new'} {...props} />;
+}
+
+function ProjectModalBody({
   open,
   onClose,
   onSave,
   project,
 }: ProjectModalProps) {
   const isEditing = !!project;
-  const [form, setForm] = useState<Project>(createEmptyProject());
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [form, setForm] = useState<Project>(() =>
+    project ? { ...project } : createEmptyProject()
+  );
+  const [showAdvanced, setShowAdvanced] = useState(
+    () =>
+      !!project &&
+      Boolean(
+        project.tech ||
+          project.language ||
+          project.packageManager ||
+          project.devCommand ||
+          project.branch ||
+          project.notes
+      )
+  );
   const [tagInput, setTagInput] = useState('');
 
+  // Override choices come from the user's configured tools, so anything
+  // they add in Settings is selectable here.
+  const [terminals, setTerminals] = useState<TerminalDefinition[]>([]);
+  const [editors, setEditors] = useState<EditorDefinition[]>([]);
+
   useEffect(() => {
-    if (open) {
-      if (project) {
-        setForm({ ...project });
-        setShowAdvanced(
-          !!(project.tech || project.language || project.packageManager || project.devCommand || project.notes)
-        );
-      } else {
-        setForm(createEmptyProject());
-        setShowAdvanced(false);
-      }
-      setTagInput('');
-    }
-  }, [open, project]);
+    if (!open) return;
+    Promise.all([getAllTerminals(), getAllEditors()])
+      .then(([t, e]) => {
+        setTerminals(t.filter((x) => x.enabled).sort((a, b) => a.order - b.order));
+        setEditors(e.filter((x) => x.enabled).sort((a, b) => a.order - b.order));
+      })
+      .catch(() => {
+        setTerminals([]);
+        setEditors([]);
+      });
+  }, [open]);
 
   const updateField = <K extends keyof Project>(key: K, value: Project[K]) => {
     setForm((prev) => ({ ...prev, [key]: value, updatedAt: Date.now() }));
@@ -268,6 +297,31 @@ export function ProjectModal({
               value={form.devCommand}
               onChange={(e) => updateField('devCommand', e.target.value)}
               helpText="Command to start the dev server"
+            />
+            <Input
+              label="Primary branch"
+              placeholder="main"
+              value={form.branch}
+              onChange={(e) => updateField('branch', e.target.value)}
+              helpText="Available to commands as {branch}"
+            />
+            <Select
+              label="Editor for this project"
+              options={[
+                { value: '', label: 'Use the default' },
+                ...editors.map((e) => ({ value: e.id, label: e.name })),
+              ]}
+              value={form.editorOverride || ''}
+              onChange={(val) => updateField('editorOverride', val)}
+            />
+            <Select
+              label="Terminal for this project"
+              options={[
+                { value: '', label: 'Use the default' },
+                ...terminals.map((t) => ({ value: t.id, label: t.name })),
+              ]}
+              value={form.terminalOverride || ''}
+              onChange={(val) => updateField('terminalOverride', val)}
             />
             <Textarea
               label="Notes"
