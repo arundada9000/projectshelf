@@ -18,6 +18,7 @@ import {
   Switch,
   Modal,
   useToast,
+  SortableList,
 } from '@/components/ui';
 import { generateId } from '@/lib/db';
 import { useLoadOnMount } from '@/lib/hooks/useLoadOnMount';
@@ -195,6 +196,19 @@ export function CollectionSection<T extends ConfigurableRecord>({
     [items, update, afterChange, toast]
   );
 
+  const reorderByOrder = useCallback(
+    (next: T[]) => {
+      const reordered = [...next];
+      const writes = reordered.map((entry, position) =>
+        update({ ...entry, order: position })
+      );
+      Promise.all(writes)
+        .then(afterChange)
+        .catch(() => toast('Could not reorder', 'error'));
+    },
+    [update, afterChange, toast]
+  );
+
   const handleDelete = useCallback(async () => {
     if (!confirmDelete) return;
     try {
@@ -252,94 +266,98 @@ export function CollectionSection<T extends ConfigurableRecord>({
         <div className={styles.collectionEmpty}>{emptyMessage}</div>
       ) : (
         <div className={styles.collectionList}>
-          {items.map((item, index) => (
-            <div
-              key={item.id}
-              className={`${styles.collectionItem} ${
-                item.enabled ? '' : styles.collectionItemDisabled
-              }`}
-            >
-              <div className={styles.collectionItemMain}>
-                <span className={styles.collectionItemName}>
-                  {item.name}
-                  {item.isDefault && <span className={styles.settingsBadge}>Default</span>}
-                  {item.isBuiltIn && (
-                    <span className={`${styles.settingsBadge} ${styles.settingsBadgeMuted}`}>
-                      Preset
-                    </span>
-                  )}
-                </span>
-                <span className={styles.collectionItemMeta}>
-                  {readField(item, metaKey) || 'Not configured'}
-                </span>
-              </div>
+          <SortableList
+            items={items}
+            getKey={(item) => item.id}
+            onReorder={reorderByOrder}
+            rowClassName={(item) => (item.enabled ? '' : styles.collectionItemDisabled)}
+            renderItem={(item, index) => (
+              <div
+                className={styles.collectionItem}
+                style={{ flex: 1, minWidth: 0, border: 'none', borderRadius: 0 }}
+              >
+                <div className={styles.collectionItemMain}>
+                  <span className={styles.collectionItemName}>
+                    {item.name}
+                    {item.isDefault && <span className={styles.settingsBadge}>Default</span>}
+                    {item.isBuiltIn && (
+                      <span className={`${styles.settingsBadge} ${styles.settingsBadgeMuted}`}>
+                        Preset
+                      </span>
+                    )}
+                  </span>
+                  <span className={styles.collectionItemMeta}>
+                    {readField(item, metaKey) || 'Not configured'}
+                  </span>
+                </div>
 
-              <div className={styles.collectionItemActions}>
-                <IconButton
-                  size="sm"
-                  label={`Move ${item.name} up`}
-                  disabled={index === 0}
-                  onClick={() => handleMove(item, -1)}
-                >
-                  <ChevronUp size={15} />
-                </IconButton>
-                <IconButton
-                  size="sm"
-                  label={`Move ${item.name} down`}
-                  disabled={index === items.length - 1}
-                  onClick={() => handleMove(item, 1)}
-                >
-                  <ChevronDown size={15} />
-                </IconButton>
-
-                {supportsDefault && (
+                <div className={styles.collectionItemActions}>
                   <IconButton
                     size="sm"
-                    label={
-                      item.isDefault
-                        ? `${item.name} is the default`
-                        : `Make ${item.name} the default`
-                    }
-                    disabled={item.isDefault || !item.enabled}
-                    onClick={() => handleSetDefault(item)}
+                    label={`Move ${item.name} up`}
+                    disabled={index === 0}
+                    onClick={() => handleMove(item, -1)}
                   >
-                    <Star size={15} />
+                    <ChevronUp size={15} />
                   </IconButton>
-                )}
+                  <IconButton
+                    size="sm"
+                    label={`Move ${item.name} down`}
+                    disabled={index === items.length - 1}
+                    onClick={() => handleMove(item, 1)}
+                  >
+                    <ChevronDown size={15} />
+                  </IconButton>
 
-                <Switch
-                  checked={item.enabled}
-                  onChange={() => handleToggleEnabled(item)}
-                  ariaLabel={`${item.enabled ? 'Disable' : 'Enable'} ${item.name}`}
-                />
+                  {supportsDefault && (
+                    <IconButton
+                      size="sm"
+                      label={
+                        item.isDefault
+                          ? `${item.name} is the default`
+                          : `Make ${item.name} the default`
+                      }
+                      disabled={item.isDefault || !item.enabled}
+                      onClick={() => handleSetDefault(item)}
+                    >
+                      <Star size={15} />
+                    </IconButton>
+                  )}
 
-                <IconButton
-                  size="sm"
-                  label={`Edit ${item.name}`}
-                  onClick={() => {
-                    setEditing(item);
-                    setIsNew(false);
-                  }}
-                >
-                  <Pencil size={15} />
-                </IconButton>
-                <IconButton
-                  size="sm"
-                  label={`Duplicate ${item.name}`}
-                  onClick={() => handleDuplicate(item)}
-                >
-                  <Copy size={15} />
-                </IconButton>
-                <IconButton
-                  size="sm"
-                  label={`Delete ${item.name}`}
-                  onClick={() => setConfirmDelete(item)}
-                >
-                  <Trash2 size={15} />
-                </IconButton>
+                  <Switch
+                    checked={item.enabled}
+                    onChange={() => handleToggleEnabled(item)}
+                    ariaLabel={`${item.enabled ? 'Disable' : 'Enable'} ${item.name}`}
+                  />
+
+                  <IconButton
+                    size="sm"
+                    label={`Edit ${item.name}`}
+                    onClick={() => {
+                      setEditing(item);
+                      setIsNew(false);
+                    }}
+                  >
+                    <Pencil size={15} />
+                  </IconButton>
+                  <IconButton
+                    size="sm"
+                    label={`Duplicate ${item.name}`}
+                    onClick={() => handleDuplicate(item)}
+                  >
+                    <Copy size={15} />
+                  </IconButton>
+                  <IconButton
+                    size="sm"
+                    label={`Delete ${item.name}`}
+                    onClick={() => setConfirmDelete(item)}
+                  >
+                    <Trash2 size={15} />
+                  </IconButton>
+                </div>
               </div>
-            </div>
-          ))}
+            )}
+          />
         </div>
       )}
 

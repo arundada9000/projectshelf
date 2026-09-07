@@ -53,3 +53,7 @@ export type { ComboBoxProps, ComboBoxOption } from './ComboBox';
 // InlineEdit
 export { InlineEdit } from './InlineEdit';
 export type { InlineEditProps } from './InlineEdit';
+
+// SortableList
+export { SortableList } from './SortableList';
+export type { SortableListProps } from './SortableList';
