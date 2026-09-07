@@ -1402,6 +1402,11 @@ function ProjectVirtualList({
     return document.documentElement;
   }, []);
 
+  // TanStack Virtual's hook is not yet annotated for React Compiler, so the
+  // compiler cannot safely memoize it. The virtualizer's return value contains
+  // functions that React Compiler could not resolve, and must be measured on
+  // every scroll/layout pass. Suppressing keeps the warning from failing lint.
+  // eslint-disable-next-line react-hooks/incompatible-library -- library not compiler-aware
   const rowVirtualizer = useVirtualizer({
     count: projects.length,
     getScrollElement,
