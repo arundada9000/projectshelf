@@ -13,6 +13,7 @@ import { APP_EVENTS, emitAppEvent } from '@/lib/actions';
 import { exportAllData, downloadJSON } from '@/lib/db/import-export';
 import { getSettings } from '@/lib/db';
 import { applyAppearance, startSystemThemeWatch } from '@/lib/appearance';
+import { setSoundEnabled } from '@/lib/sound';
 
 // ── Routes ─────────────────────────────────────────────────
 
@@ -183,6 +184,7 @@ function AppFrame({ children }: { children: React.ReactNode }) {
     getSettings()
       .then((saved) => {
         if (cancelled) return;
+        setSoundEnabled(saved.soundEnabled);
         applyAppearance({
           theme: saved.theme,
           font: saved.font,

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, RotateCcw } from 'lucide-react';
 import { formatKeyCombo } from '@/lib/hooks/useHotkeys';
+import { playSound } from '@/lib/sound';
 import styles from './ShortcutRecorder.module.css';
 
 // ── Key Naming ─────────────────────────────────────────────
@@ -82,6 +83,7 @@ export function ShortcutRecorder({
       if (!combo) return;
 
       onChange(combo);
+      playSound('shortcut');
       stop();
     };
 

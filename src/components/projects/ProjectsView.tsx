@@ -55,6 +55,7 @@ import {
   type ProjectFilters,
 } from '@/lib/filters';
 import { APP_EVENTS, emitAppEvent } from '@/lib/actions';
+import { playSound } from '@/lib/sound';
 import {
   loadToolContext,
   buildCommandForProject,
@@ -308,13 +309,16 @@ export function ProjectsView() {
         if (existing) {
           await updateProject(project);
           toast('Project updated', 'success');
+          playSound('save');
         } else {
           await addProject(project);
           toast('Project added', 'success');
+          playSound('added');
         }
         await loadData();
       } catch {
         toast('Failed to save project', 'error');
+        playSound('error');
       }
     },
     [projects, loadData, toast]
@@ -347,10 +351,12 @@ export function ProjectsView() {
             : `Deleted ${targets.length} projects`,
           'success'
         );
+        playSound('removed');
         clearSelection();
         await loadData();
       } catch {
         toast('Could not delete', 'error');
+        playSound('error');
       }
     },
     [clearSelection, loadData, toast]

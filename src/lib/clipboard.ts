@@ -4,6 +4,8 @@
    to degrade gracefully rather than silently fail.
    ============================================================ */
 
+import { playSound } from '@/lib/sound';
+
 /**
  * Copy text, falling back to a hidden selection when the async
  * Clipboard API is unavailable or refused (insecure context, an
@@ -18,13 +20,16 @@ export async function copyText(text: string): Promise<boolean> {
   if (navigator.clipboard?.writeText) {
     try {
       await navigator.clipboard.writeText(text);
+      playSound('copy');
       return true;
     } catch {
       // Fall through to the selection-based path below.
     }
   }
 
-  return copyViaSelection(text);
+  const ok = copyViaSelection(text);
+  if (ok) playSound('copy');
+  return ok;
 }
 
 function copyViaSelection(text: string): boolean {

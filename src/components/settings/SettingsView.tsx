@@ -53,6 +53,7 @@ import {
 } from '@/lib/db/import-export';
 import { Button, Switch, Select, Modal, useToast } from '@/components/ui';
 import { applyAppearance } from '@/lib/appearance';
+import { setSoundEnabled } from '@/lib/sound';
 import { CollectionSection, type CollectionField } from './sections/CollectionSection';
 import { CommandsSection } from './sections/CommandsSection';
 import { ShortcutsSection } from './sections/ShortcutsSection';
@@ -213,6 +214,8 @@ export function SettingsView() {
     async (partial: Partial<UserSettings>) => {
       const updated = await updateSettings(partial);
       setSettings(updated);
+
+      setSoundEnabled(updated.soundEnabled);
 
       // Apply to the document and mirror to localStorage so the choice
       // survives a reload.
@@ -390,6 +393,20 @@ export function SettingsView() {
                   <Switch
                     checked={settings.confirmDestructive}
                     onChange={(v) => update({ confirmDestructive: v })}
+                  />
+                </div>
+              </div>
+              <div className={styles.settingsRow}>
+                <div className={styles.settingsRowInfo}>
+                  <span className={styles.settingsRowLabel}>Sound feedback</span>
+                  <span className={styles.settingsRowDesc}>
+                    Play a short, subtle sound after important actions
+                  </span>
+                </div>
+                <div className={styles.settingsRowControl}>
+                  <Switch
+                    checked={settings.soundEnabled}
+                    onChange={(v) => update({ soundEnabled: v })}
                   />
                 </div>
               </div>
