@@ -7,6 +7,8 @@ import {
   Geist,
 } from 'next/font/google';
 import '@/styles/globals.css';
+import { SITE } from '@/lib/site';
+import { APPEARANCE_BOOT_SCRIPT } from '@/lib/appearance';
 
 // ── Font Loading ───────────────────────────────────────────
 
@@ -43,31 +45,49 @@ const geist = Geist({
 // ── Metadata ───────────────────────────────────────────────
 
 export const metadata: Metadata = {
-  title: 'ProjectShelf: Your Developer Command Center',
-  description:
-    'Organize, search, and launch all your software projects from one place. Offline-first, keyboard-driven, and fully configurable.',
+  // Lets every page express canonical and Open Graph URLs as paths.
+  metadataBase: new URL(SITE.origin),
+  title: {
+    default: 'ProjectShelf: find and launch your software projects',
+    template: '%s | ProjectShelf',
+  },
+  description: SITE.description,
+  applicationName: SITE.name,
   keywords: [
-    'developer tools',
     'project manager',
-    'command center',
-    'offline-first',
+    'developer tools',
+    'local-first',
+    'offline first',
     'PWA',
-    'project organizer',
+    'command generator',
+    'project inventory',
   ],
-  authors: [{ name: 'Arun' }],
+  authors: [{ name: 'Arun Neupane', url: 'https://arunneupane.vercel.app' }],
+  creator: 'Arun Neupane',
   openGraph: {
-    title: 'ProjectShelf: Your Developer Command Center',
-    description:
-      'Organize, search, and launch all your software projects from one place.',
+    siteName: SITE.name,
     type: 'website',
     locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
+  manifest: '/manifest.json',
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+    apple: [{ url: '/icon.svg' }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'ProjectShelf',
   },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0a0a0a',
+  themeColor: '#0B1120',
 };
 
 // ── Root Layout ────────────────────────────────────────────
@@ -96,7 +116,26 @@ export default function RootLayout({
       data-density="comfortable"
       suppressHydrationWarning
     >
-      <body>{children}</body>
+      <body>
+        {/*
+          Restores the saved theme, font, and density before first paint.
+          Must stay ahead of {children} so the page never flashes the
+          server-rendered default.
+        */}
+        <script dangerouslySetInnerHTML={{ __html: APPEARANCE_BOOT_SCRIPT }} />
+        {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if (typeof window !== 'undefined' && 'serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.hostname === 'localhost')) {
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('/sw.js').catch(() => {});
+                });
+              }
+            `,
+          }}
+        />
+      </body>
     </html>
   );
 }

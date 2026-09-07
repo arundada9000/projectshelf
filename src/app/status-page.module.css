@@ -1,0 +1,111 @@
+/* ============================================================
+   Status Pages (404, unexpected error)
+   Shares the application's tokens so these never feel like a
+   different product.
+   ============================================================ */
+
+.page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--space-10);
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.inner {
+  max-width: 52ch;
+  text-align: center;
+}
+
+.code {
+  margin: 0 0 var(--space-7);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.title {
+  margin: 0 0 var(--space-7);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.02em;
+}
+
+.body {
+  margin: 0 0 var(--space-11);
+  font-size: var(--text-md);
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+
+.digest {
+  margin: calc(var(--space-11) * -1 + var(--space-4)) 0 var(--space-11);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+}
+
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--button-height-md);
+  padding: 0 var(--space-9);
+  border: none;
+  border-radius: var(--radius-lg);
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-default);
+}
+
+.primary:hover {
+  background-color: var(--color-accent-hover);
+}
+
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--button-height-md);
+  padding: 0 var(--space-9);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-default),
+    background-color var(--duration-fast) var(--ease-default);
+}
+
+.secondary:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-hover);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
