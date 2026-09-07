@@ -26,6 +26,7 @@ export interface Project {
   language: string;
   packageManager: string;
   devCommand: string;
+  branch: string;
   notes: string;
   isPinned: boolean;
   icon: string;
@@ -133,6 +134,7 @@ export interface ShortcutDefinition {
 // ── User Settings ──────────────────────────────────────────
 
 export type ThemeName =
+  | 'system'
   | 'light'
   | 'dark'
   | 'midnight'

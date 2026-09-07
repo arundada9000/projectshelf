@@ -14,13 +14,6 @@ import type {
   UserSettings,
 } from './schema';
 
-// ── Utility: generate simple IDs ───────────────────────────
-let counter = 0;
-function presetId(prefix: string): string {
-  counter++;
-  return `${prefix}-preset-${counter}`;
-}
-
 // ── Default Terminals ──────────────────────────────────────
 
 export const DEFAULT_TERMINALS: TerminalDefinition[] = [
@@ -499,7 +492,7 @@ export const DEFAULT_STATUSES: StatusConfig[] = [
 // ── Default User Settings ──────────────────────────────────
 
 export const DEFAULT_SETTINGS: UserSettings = {
-  theme: 'dark',
+  theme: 'system',
   font: 'inter',
   density: 'comfortable',
   defaultView: 'grid',

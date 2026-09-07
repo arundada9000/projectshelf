@@ -100,12 +100,25 @@ interface ProjectShelfDB {
 
 // ── Database Connection ────────────────────────────────────
 
-let dbInstance: IDBPDatabase<ProjectShelfDB> | null = null;
+// The connection is cached as a *promise*, not as a resolved instance.
+// Several components hit the database on mount, so caching the resolved
+// value would let every one of them run openDB + seedDefaults in parallel
+// before the first call finished, seeding the presets multiple times.
+let dbPromise: Promise<IDBPDatabase<ProjectShelfDB>> | null = null;
 
-export async function getDB(): Promise<IDBPDatabase<ProjectShelfDB>> {
-  if (dbInstance) return dbInstance;
+export function getDB(): Promise<IDBPDatabase<ProjectShelfDB>> {
+  if (!dbPromise) {
+    dbPromise = openAndSeed().catch((err) => {
+      // Let a later call retry instead of caching the failure forever.
+      dbPromise = null;
+      throw err;
+    });
+  }
+  return dbPromise;
+}
 
-  dbInstance = await openDB<ProjectShelfDB>(DB_NAME, DB_VERSION, {
+async function openAndSeed(): Promise<IDBPDatabase<ProjectShelfDB>> {
+  const db = await openDB<ProjectShelfDB>(DB_NAME, DB_VERSION, {
     upgrade(db, oldVersion) {
       if (oldVersion < 1) {
         // Projects store
@@ -154,69 +167,44 @@ export async function getDB(): Promise<IDBPDatabase<ProjectShelfDB>> {
   });
 
   // Seed defaults if empty
-  await seedDefaults(dbInstance);
+  await seedDefaults(db);
 
-  return dbInstance;
+  return db;
 }
 
 // ── Seed Defaults ──────────────────────────────────────────
 
+/**
+ * Write a preset collection into an empty store.
+ * Uses put() rather than add() so a second tab racing the same seed
+ * overwrites identical records instead of aborting the transaction.
+ */
+async function seedStore<K extends 'terminals' | 'editors' | 'tools' | 'commands' | 'shortcuts'>(
+  db: IDBPDatabase<ProjectShelfDB>,
+  storeName: K,
+  records: ProjectShelfDB[K]['value'][]
+): Promise<void> {
+  const count = await db.count(storeName);
+  if (count > 0) return;
+
+  const tx = db.transaction(storeName, 'readwrite');
+  for (const record of records) {
+    await tx.store.put(record);
+  }
+  await tx.done;
+}
+
 async function seedDefaults(db: IDBPDatabase<ProjectShelfDB>): Promise<void> {
-  // Settings
   const existingSettings = await db.get(STORES.settings, 'user');
   if (!existingSettings) {
     await db.put(STORES.settings, DEFAULT_SETTINGS, 'user');
   }
 
-  // Terminals
-  const terminalCount = await db.count(STORES.terminals);
-  if (terminalCount === 0) {
-    const tx = db.transaction(STORES.terminals, 'readwrite');
-    for (const terminal of DEFAULT_TERMINALS) {
-      await tx.store.add(terminal);
-    }
-    await tx.done;
-  }
-
-  // Editors
-  const editorCount = await db.count(STORES.editors);
-  if (editorCount === 0) {
-    const tx = db.transaction(STORES.editors, 'readwrite');
-    for (const editor of DEFAULT_EDITORS) {
-      await tx.store.add(editor);
-    }
-    await tx.done;
-  }
-
-  // Tools
-  const toolCount = await db.count(STORES.tools);
-  if (toolCount === 0) {
-    const tx = db.transaction(STORES.tools, 'readwrite');
-    for (const tool of DEFAULT_TOOLS) {
-      await tx.store.add(tool);
-    }
-    await tx.done;
-  }
-
-  // Commands
-  const commandCount = await db.count(STORES.commands);
-  if (commandCount === 0) {
-    const tx = db.transaction(STORES.commands, 'readwrite');
-    for (const command of DEFAULT_COMMANDS) {
-      await tx.store.add(command);
-    }
-    await tx.done;
-  }
-
-  // Shortcuts
-  const shortcutCount = await db.count(STORES.shortcuts);
-  if (shortcutCount === 0) {
-    const tx = db.transaction(STORES.shortcuts, 'readwrite');
-    for (const shortcut of DEFAULT_SHORTCUTS) {
-      await tx.store.add(shortcut);
-    }
-    await tx.done;
-  }
+  await seedStore(db, STORES.terminals, DEFAULT_TERMINALS);
+  await seedStore(db, STORES.editors, DEFAULT_EDITORS);
+  await seedStore(db, STORES.tools, DEFAULT_TOOLS);
+  await seedStore(db, STORES.commands, DEFAULT_COMMANDS);
+  await seedStore(db, STORES.shortcuts, DEFAULT_SHORTCUTS);
 }
 
 // ── Utility: Generate ID ───────────────────────────────────

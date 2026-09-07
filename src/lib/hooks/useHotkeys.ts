@@ -118,8 +118,13 @@ export function matchesEvent(parsed: ParsedCombo, e: KeyboardEvent): boolean {
 // ── useHotkeys Hook ────────────────────────────────────────
 
 export function useHotkeys(actions: HotkeyAction[]) {
+  // Held in a ref so the listener is registered once and still sees the
+  // latest handlers. Written in an effect, never during render.
   const actionsRef = useRef(actions);
-  actionsRef.current = actions;
+
+  useEffect(() => {
+    actionsRef.current = actions;
+  }, [actions]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -131,9 +136,16 @@ export function useHotkeys(actions: HotkeyAction[]) {
         tagName === 'select' ||
         target?.isContentEditable === true;
 
+      // Escape belongs to whatever overlay is on top. Without this, closing
+      // a dialog with Escape would also run the global Escape shortcut and,
+      // for example, wipe the user's selection behind the dialog.
+      const overlayOpen = document.querySelector('[role="dialog"]') !== null;
+
       for (const action of actionsRef.current) {
         if (action.enabled === false) continue;
         const parsed = parseKeyCombo(action.keyCombo);
+
+        if (overlayOpen && (parsed.key === 'escape' || parsed.key === 'esc')) continue;
 
         if (matchesEvent(parsed, e)) {
           // If in an input, don't hijack standard text operations like Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+Z, Ctrl+X

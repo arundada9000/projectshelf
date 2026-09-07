@@ -17,6 +17,7 @@ export interface CommandVariables {
   language: string;
   packageManager: string;
   devCommand: string;
+  branch: string;
 }
 
 /**
@@ -32,13 +33,14 @@ export function projectToVariables(project: Project): CommandVariables {
     language: project.language,
     packageManager: project.packageManager || 'npm',
     devCommand: project.devCommand || 'npm run dev',
+    branch: project.branch || 'main',
   };
 }
 
 /**
  * Substitute variables in a command template.
  * Supports {path}, {name}, {github}, {url}, {tech}, {language},
- * {packageManager}, {devCommand}.
+ * {packageManager}, {devCommand}, {branch}.
  */
 export function substituteVariables(
   template: string,
@@ -109,5 +111,6 @@ export function getAvailableVariables(): { key: string; description: string }[] 
     { key: '{language}', description: 'Primary language' },
     { key: '{packageManager}', description: 'Package manager (npm, pnpm, yarn)' },
     { key: '{devCommand}', description: 'Dev server command' },
+    { key: '{branch}', description: 'Primary git branch' },
   ];
 }
