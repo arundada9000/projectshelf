@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { LandingPage } from '@/components/landing/LandingPage';
+import { SITE, absoluteUrl } from '@/lib/site';
 
 // The landing page is a server component so its content is in the HTML
 // for crawlers and for readers on a slow connection. The application
@@ -10,6 +11,13 @@ export const metadata: Metadata = {
   description:
     'A local-first inventory for developers with many projects. Search everything you have built, select several at once, and generate the exact commands to open them in your own tools.',
   alternates: { canonical: '/' },
+  openGraph: {
+    title: 'ProjectShelf: find and launch your software projects',
+    description:
+      'A local-first inventory for developers with many projects. Search everything you have built, select several at once, and generate the exact commands to open them in your own tools.',
+    url: absoluteUrl('/'),
+    type: 'website',
+  },
 };
 
 const FAQ_STRUCTURED_DATA = {
@@ -51,12 +59,49 @@ const FAQ_STRUCTURED_DATA = {
   ],
 };
 
+const PRODUCT_STRUCTURED_DATA = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'SoftwareApplication',
+      name: SITE.name,
+      url: SITE.origin,
+      description:
+        'A local-first inventory for developers with many projects. Search everything you have built, select several at once, and generate the exact commands to open them in your own tools.',
+      applicationCategory: 'DeveloperApplication',
+      operatingSystem: 'Web',
+      softwareVersion: '1.0',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+      },
+      author: {
+        '@type': 'Person',
+        name: 'Arun Neupane',
+        url: 'https://arunneupane.vercel.app',
+      },
+    },
+    {
+      '@type': 'WebSite',
+      name: SITE.name,
+      url: SITE.origin,
+      description: SITE.description,
+      inLanguage: 'en',
+    },
+  ],
+};
+
 export default function HomePage() {
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(FAQ_STRUCTURED_DATA) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(PRODUCT_STRUCTURED_DATA) }}
       />
       <LandingPage />
     </>

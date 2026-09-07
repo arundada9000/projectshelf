@@ -57,4 +57,4 @@ Screenshots of the finished interface are stored in [`docs/screenshots/`](docs/s
 
 ## Credits
 
-Built by [Arun Neupane](https://arunneupane.vercel.app). Deployed at [projectshelf.app](https://projectshelf.app).
+Built by [Arun Neupane](https://arunneupane.vercel.app). Deployed at [sideprojectshelf.vercel.app](https://sideprojectshelf.vercel.app).
