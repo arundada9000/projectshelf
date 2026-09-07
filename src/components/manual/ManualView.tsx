@@ -3,13 +3,11 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   FolderKanban,
-  Keyboard,
   Search,
   Layers,
   Settings,
   Terminal,
   Code2,
-  FolderOpen,
   Download,
   Upload,
   Palette,
@@ -22,11 +20,24 @@ import {
   Copy,
   Trash2,
   Eye,
+  BookOpen,
+  ArrowUpRight,
 } from 'lucide-react';
+import Link from 'next/link';
 import { SearchInput } from '@/components/ui';
-import { DEFAULT_SHORTCUTS } from '@/lib/db/presets';
+import type { ShortcutDefinition, ShortcutScope } from '@/lib/db/schema';
+import { getAllShortcuts } from '@/lib/db';
+import { APP_ACTION_MAP } from '@/lib/actions';
 import { formatKeyCombo } from '@/lib/hooks/useHotkeys';
 import styles from './Manual.module.css';
+
+const SCOPE_LABELS: Record<ShortcutScope, string> = {
+  global: 'Anywhere',
+  navigation: 'Navigation',
+  projects: 'Projects view',
+  selection: 'With a selection',
+  'command-palette': 'Command palette',
+};
 
 // ── Manual Sections ────────────────────────────────────────
 
@@ -36,7 +47,7 @@ interface ManualSection {
   content: React.ReactNode;
 }
 
-function buildSections(): ManualSection[] {
+function buildSections(shortcuts: ShortcutDefinition[]): ManualSection[] {
   return [
     {
       id: 'getting-started',
@@ -45,7 +56,7 @@ function buildSections(): ManualSection[] {
         <>
           <p className={styles.manualParagraph}>
             ProjectShelf is a local-first developer command center. All data is stored in your
-            browser's IndexedDB — no accounts, no cloud sync, no tracking. Everything works offline.
+            browser&apos;s IndexedDB. No accounts, no cloud sync, no tracking, and everything works offline.
           </p>
           <div className={styles.manualCallout}>
             <Info size={16} className={styles.manualCalloutIcon} />
@@ -60,7 +71,7 @@ function buildSections(): ManualSection[] {
               <div className={styles.manualListContent}>
                 <div className={styles.manualListTitle}>Add Projects</div>
                 <div className={styles.manualListDesc}>
-                  Click "New Project" or press Ctrl+N. Provide the local path, status, description, tags, and more.
+                  Click &quot;New Project&quot; or press Ctrl+N. Provide the local path, status, description, tags, and more.
                   Advanced fields (tech stack, package manager, dev command) are hidden by default.
                 </div>
               </div>
@@ -149,8 +160,8 @@ function buildSections(): ManualSection[] {
       content: (
         <>
           <p className={styles.manualParagraph}>
-            Every action in ProjectShelf has a keyboard shortcut. Press <kbd>?</kbd> anytime
-            to see the full cheat sheet.
+            These are your current bindings. Change any of them in Settings, under
+            Shortcuts. Press <kbd>?</kbd> at any time for a quick reference.
           </p>
           <table className={styles.manualTable}>
             <thead>
@@ -161,7 +172,7 @@ function buildSections(): ManualSection[] {
               </tr>
             </thead>
             <tbody>
-              {DEFAULT_SHORTCUTS.map((shortcut) => (
+              {shortcuts.filter((s) => s.keyCombo).map((shortcut) => (
                 <tr key={shortcut.id}>
                   <td>
                     <span className={styles.manualKbd}>
@@ -170,8 +181,8 @@ function buildSections(): ManualSection[] {
                       ))}
                     </span>
                   </td>
-                  <td>{shortcut.description}</td>
-                  <td>{shortcut.scope}</td>
+                  <td>{APP_ACTION_MAP[shortcut.actionId]?.label ?? shortcut.description}</td>
+                  <td>{SCOPE_LABELS[shortcut.scope] ?? shortcut.scope}</td>
                 </tr>
               ))}
             </tbody>
@@ -211,7 +222,7 @@ function buildSections(): ManualSection[] {
           <p className={styles.manualParagraph}>
             Launch sets let you group projects together and open them all at once.
             Create a launch set from the Launch Sets page or by multi-selecting projects
-            and clicking "Create Launch Set" in the floating toolbar.
+            and clicking &quot;Create Launch Set&quot; in the floating toolbar.
           </p>
           <ul className={styles.manualList}>
             <li className={styles.manualListItem}>
@@ -219,8 +230,73 @@ function buildSections(): ManualSection[] {
               <div className={styles.manualListContent}>
                 <div className={styles.manualListTitle}>Batch Launch</div>
                 <div className={styles.manualListDesc}>
-                  Clicking "Launch" on a set opens all member projects in your configured editor,
-                  terminal, and browser simultaneously.
+                  Launching a set opens a preview showing the commands generated for every
+                  project in it. Choose a target and tool, review the output, then copy it
+                  all with one action.
+                </div>
+              </div>
+            </li>
+          </ul>
+        </>
+      ),
+    },
+    {
+      id: 'commands',
+      title: 'Commands and Tools',
+      content: (
+        <>
+          <p className={styles.manualParagraph}>
+            ProjectShelf never runs anything on your machine. It generates the exact text
+            for you to paste into a terminal. What it generates comes entirely from the
+            terminals, editors, applications, and command templates you configure.
+          </p>
+          <ul className={styles.manualList}>
+            <li className={styles.manualListItem}>
+              <div className={styles.manualListIcon}><Terminal size={14} /></div>
+              <div className={styles.manualListContent}>
+                <div className={styles.manualListTitle}>Terminals, editors, applications</div>
+                <div className={styles.manualListDesc}>
+                  Each has its own section in Settings. Add, edit, duplicate, reorder,
+                  disable, or delete any of them, including the built-in presets. The
+                  presets assume Windows, so add your own on macOS or Linux.
+                </div>
+              </div>
+            </li>
+            <li className={styles.manualListItem}>
+              <div className={styles.manualListIcon}><Code2 size={14} /></div>
+              <div className={styles.manualListContent}>
+                <div className={styles.manualListTitle}>Command templates</div>
+                <div className={styles.manualListDesc}>
+                  Settings, under Commands. Templates use placeholders that are filled in
+                  per project: <code>{'{path}'}</code>, <code>{'{name}'}</code>,{' '}
+                  <code>{'{github}'}</code>, <code>{'{url}'}</code>,{' '}
+                  <code>{'{branch}'}</code>, <code>{'{devCommand}'}</code> and more. The
+                  editor lets you insert them without typing.
+                </div>
+              </div>
+            </li>
+            <li className={styles.manualListItem}>
+              <div className={styles.manualListIcon}><Settings size={14} /></div>
+              <div className={styles.manualListContent}>
+                <div className={styles.manualListTitle}>Which tool gets used</div>
+                <div className={styles.manualListDesc}>
+                  A global default applies unless a project overrides it, and a project
+                  override applies unless you pick something else for a single action.
+                  Set the global default in Settings, under General. Set a project
+                  override in the project&apos;s advanced fields. For a one-time choice,
+                  right-click a project and use Open with. A one-time choice never
+                  changes your saved defaults.
+                </div>
+              </div>
+            </li>
+            <li className={styles.manualListItem}>
+              <div className={styles.manualListIcon}><Copy size={14} /></div>
+              <div className={styles.manualListContent}>
+                <div className={styles.manualListTitle}>Many projects at once</div>
+                <div className={styles.manualListDesc}>
+                  Select several projects and the same actions generate one command per
+                  project, copied together as a single block. If your browser blocks the
+                  clipboard, the text is shown so you can select it manually.
                 </div>
               </div>
             </li>
@@ -267,7 +343,7 @@ function buildSections(): ManualSection[] {
       content: (
         <>
           <p className={styles.manualParagraph}>
-            All data is stored locally in your browser's IndexedDB. No data leaves your machine.
+            All data is stored locally in your browser&apos;s IndexedDB. No data leaves your machine.
           </p>
           <ul className={styles.manualList}>
             <li className={styles.manualListItem}>
@@ -275,7 +351,7 @@ function buildSections(): ManualSection[] {
               <div className={styles.manualListContent}>
                 <div className={styles.manualListTitle}>Export</div>
                 <div className={styles.manualListDesc}>
-                  Export all data as a JSON file from Settings → Data → Export. The file includes
+                  Export all data as a JSON file from Settings, under Data. The file includes
                   projects, settings, commands, shortcuts, and launch sets.
                 </div>
               </div>
@@ -285,7 +361,7 @@ function buildSections(): ManualSection[] {
               <div className={styles.manualListContent}>
                 <div className={styles.manualListTitle}>Import</div>
                 <div className={styles.manualListDesc}>
-                  Import a previously exported JSON backup from Settings → Data → Import.
+                  Import a previously exported JSON backup from Settings, under Data.
                   Imported data is validated before being applied.
                 </div>
               </div>
@@ -295,7 +371,7 @@ function buildSections(): ManualSection[] {
               <div className={styles.manualListContent}>
                 <div className={styles.manualListTitle}>Clear Data</div>
                 <div className={styles.manualListDesc}>
-                  Reset everything to defaults from Settings → Data → Danger Zone.
+                  Reset everything to defaults from Settings, under Data.
                   This permanently deletes all projects and configurations.
                 </div>
               </div>
@@ -314,7 +390,15 @@ export function ManualView() {
   const [activeSection, setActiveSection] = useState('getting-started');
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const allSections = useMemo(() => buildSections(), []);
+  // The manual documents the user's real bindings, not the presets.
+  const [shortcuts, setShortcuts] = useState<ShortcutDefinition[]>([]);
+  useEffect(() => {
+    getAllShortcuts()
+      .then(setShortcuts)
+      .catch(() => setShortcuts([]));
+  }, []);
+
+  const allSections = useMemo(() => buildSections(shortcuts), [shortcuts]);
 
   const sections = useMemo(() => {
     if (!search.trim()) return allSections;
@@ -351,6 +435,19 @@ export function ManualView() {
         ))}
       </div>
 
+      {/* Longer, platform-specific material lives outside the app. */}
+      <Link href="/guides" className={styles.manualGuidesLink}>
+        <BookOpen size={15} />
+        <span>
+          <strong>Guides</strong>
+          <span className={styles.manualGuidesLinkDesc}>
+            Setup for macOS and Linux, writing command templates, and workflows for
+            design and research projects.
+          </span>
+        </span>
+        <ArrowUpRight size={14} className={styles.manualGuidesLinkArrow} />
+      </Link>
+
       {/* Sections */}
       {sections.map((section) => (
         <div
@@ -365,7 +462,7 @@ export function ManualView() {
 
       {sections.length === 0 && (
         <p style={{ color: 'var(--color-text-muted)', padding: 'var(--space-10)', textAlign: 'center' }}>
-          No sections match "{search}"
+          No sections match &quot;{search}&quot;
         </p>
       )}
     </div>

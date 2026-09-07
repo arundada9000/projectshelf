@@ -2,19 +2,20 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  FolderKanban,
   Plus,
   Search,
-  Keyboard,
-  Settings,
+  Command,
+  Pin,
   Layers,
+  Clock,
   LayoutDashboard,
-  Code2,
-  Terminal,
+  Play,
 } from 'lucide-react';
-import type { Project } from '@/lib/db/schema';
-import { getAllProjects } from '@/lib/db';
+import type { Project, LaunchSet, ShortcutDefinition } from '@/lib/db/schema';
+import { getAllProjects, getAllLaunchSets, getAllShortcuts } from '@/lib/db';
 import { DEFAULT_STATUSES } from '@/lib/db/presets';
+import { APP_EVENTS, emitAppEvent } from '@/lib/actions';
+import { formatKeyCombo } from '@/lib/hooks/useHotkeys';
 import { Button } from '@/components/ui';
 import styles from './Dashboard.module.css';
 
@@ -32,220 +33,277 @@ function formatRelativeTime(timestamp: number): string {
   return `${Math.floor(days / 30)}mo ago`;
 }
 
-function shortenPath(path: string, maxLen = 35): string {
+function shortenPath(path: string, maxLen = 42): string {
+  if (!path) return 'No path saved';
   if (path.length <= maxLen) return path;
   const parts = path.replace(/\\/g, '/').split('/');
   if (parts.length <= 2) return path;
   return `.../${parts.slice(-2).join('/')}`;
 }
 
-// ── Quick Actions ──────────────────────────────────────────
-
-interface QuickAction {
-  icon: React.ReactNode;
-  label: string;
-  shortcut: string;
-  action: () => void;
-}
-
-// ── Dashboard View ─────────────────────────────────────────
+// ── Dashboard ──────────────────────────────────────────────
 
 export interface DashboardViewProps {
   onNavigate: (page: string) => void;
 }
 
+/**
+ * The dashboard is a set of entry points into work, not a report.
+ * Every element here either opens something or starts an action.
+ */
 export function DashboardView({ onNavigate }: DashboardViewProps) {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [launchSets, setLaunchSets] = useState<LaunchSet[]>([]);
+  const [shortcuts, setShortcuts] = useState<ShortcutDefinition[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getAllProjects()
-      .then(setProjects)
+    Promise.all([getAllProjects(), getAllLaunchSets(), getAllShortcuts()])
+      .then(([p, s, k]) => {
+        setProjects(p);
+        setLaunchSets(s);
+        setShortcuts(k);
+      })
+      .catch(() => {
+        setProjects([]);
+        setLaunchSets([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
-  const quickActions: QuickAction[] = [
-    {
-      icon: <Plus size={18} />,
-      label: 'New Project',
-      shortcut: 'Ctrl+N',
-      action: () => {
-        onNavigate('projects');
-        setTimeout(() => document.dispatchEvent(new CustomEvent('projectshelf:create-project')), 100);
-      },
+  const keyFor = useCallback(
+    (actionId: string) => {
+      const combo = shortcuts.find((s) => s.actionId === actionId)?.keyCombo;
+      return combo ? formatKeyCombo(combo) : '';
     },
-    {
-      icon: <Search size={18} />,
-      label: 'Search Projects',
-      shortcut: '/',
-      action: () => {
-        onNavigate('projects');
-        setTimeout(() => {
-          const input = document.querySelector<HTMLInputElement>('[role="searchbox"]');
-          input?.focus();
-        }, 100);
-      },
-    },
-    {
-      icon: <Keyboard size={18} />,
-      label: 'Command Palette',
-      shortcut: 'Ctrl+K',
-      action: () => {
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
-      },
-    },
-    {
-      icon: <Settings size={18} />,
-      label: 'Settings',
-      shortcut: 'Ctrl+,',
-      action: () => onNavigate('settings'),
-    },
-  ];
+    [shortcuts]
+  );
 
-  // Stats
-  const totalProjects = projects.length;
-  const pinnedCount = projects.filter((p) => p.isPinned).length;
-  const activeCount = projects.filter((p) => p.status === 'active').length;
-  const recentProjects = [...projects]
-    .sort((a, b) => b.updatedAt - a.updatedAt)
-    .slice(0, 6);
-
-  // Status counts
-  const statusCounts = DEFAULT_STATUSES.map((status) => ({
-    ...status,
-    count: projects.filter((p) => p.status === status.id).length,
-  }));
-
-  // Unique tags
-  const allTags = new Set(projects.flatMap((p) => p.tags));
+  const goToProjects = useCallback(
+    (then?: () => void) => {
+      onNavigate('projects');
+      if (then) setTimeout(then, 120);
+    },
+    [onNavigate]
+  );
 
   if (loading) return null;
 
   if (projects.length === 0) {
     return (
       <div className={styles.emptyDashboard}>
-        <LayoutDashboard size={48} className={styles.emptyIcon} />
-        <h2 className={styles.emptyTitle}>Welcome to ProjectShelf</h2>
+        <LayoutDashboard size={44} className={styles.emptyIcon} />
+        <h2 className={styles.emptyTitle}>Nothing on the shelf yet</h2>
         <p className={styles.emptyDesc}>
-          Your dashboard will show project stats and quick actions once you add projects.
-          Get started by adding your first project.
+          Add a project and this becomes your way back into it: what you touched last,
+          what you pinned, and the sets you launch together. A name and a folder path is
+          enough to start.
         </p>
         <Button
           variant="primary"
           icon={<Plus size={14} />}
-          onClick={() => {
-            onNavigate('projects');
-            setTimeout(() => document.dispatchEvent(new CustomEvent('projectshelf:create-project')), 100);
-          }}
+          onClick={() => goToProjects(() => emitAppEvent(APP_EVENTS.createProject))}
         >
-          Add First Project
+          Add your first project
         </Button>
       </div>
     );
   }
 
+  const pinned = projects.filter((p) => p.isPinned);
+  const recent = [...projects].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 6);
+  const recentSets = [...launchSets]
+    .sort((a, b) => b.lastUsedAt - a.lastUsedAt)
+    .slice(0, 4);
+
+  const statusCounts = DEFAULT_STATUSES.map((status) => ({
+    ...status,
+    count: projects.filter((p) => p.status === status.id).length,
+  })).filter((status) => status.count > 0);
+
+  const renderProjectRow = (project: Project) => (
+    <button
+      key={project.id}
+      type="button"
+      className={styles.projectRow}
+      onClick={() => goToProjects()}
+    >
+      <span className={styles.projectRowIcon}>
+        {project.icon || project.name.charAt(0).toUpperCase()}
+      </span>
+      <span className={styles.projectRowInfo}>
+        <span className={styles.projectRowName}>{project.name}</span>
+        <span className={styles.projectRowPath}>{shortenPath(project.localPath)}</span>
+      </span>
+      <span className={styles.projectRowTime}>{formatRelativeTime(project.updatedAt)}</span>
+    </button>
+  );
+
   return (
     <div className={styles.dashboard}>
-      {/* Stats */}
-      <div className={styles.statsRow}>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Total Projects</span>
-          <span className={styles.statValue}>{totalProjects}</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Active</span>
-          <span className={styles.statValue}>{activeCount}</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Pinned</span>
-          <span className={styles.statValue}>{pinnedCount}</span>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Tags</span>
-          <span className={styles.statValue}>{allTags.size}</span>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div>
+      {/* Quick actions */}
+      <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h3 className={styles.sectionTitle}>Quick Actions</h3>
+          <h2 className={styles.sectionTitle}>Start</h2>
         </div>
         <div className={styles.quickActions}>
-          {quickActions.map((action) => (
-            <button
-              key={action.label}
-              type="button"
-              className={styles.quickAction}
-              onClick={action.action}
-            >
-              <div className={styles.quickActionIcon}>{action.icon}</div>
-              <span className={styles.quickActionLabel}>{action.label}</span>
-              <span className={styles.quickActionShortcut}>{action.shortcut}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+          <button
+            type="button"
+            className={styles.quickAction}
+            onClick={() => goToProjects(() => emitAppEvent(APP_EVENTS.createProject))}
+          >
+            <span className={styles.quickActionIcon}>
+              <Plus size={17} />
+            </span>
+            <span className={styles.quickActionLabel}>New project</span>
+            <span className={styles.quickActionShortcut}>{keyFor('createProject')}</span>
+          </button>
 
-      {/* Recent Projects */}
-      <div>
+          <button
+            type="button"
+            className={styles.quickAction}
+            onClick={() =>
+              goToProjects(() => {
+                const input = document.querySelector<HTMLInputElement>(
+                  'input[role="searchbox"], input[placeholder*="Search"]'
+                );
+                input?.focus();
+              })
+            }
+          >
+            <span className={styles.quickActionIcon}>
+              <Search size={17} />
+            </span>
+            <span className={styles.quickActionLabel}>Find a project</span>
+            <span className={styles.quickActionShortcut}>{keyFor('focusSearch')}</span>
+          </button>
+
+          <button
+            type="button"
+            className={styles.quickAction}
+            onClick={() => emitAppEvent(APP_EVENTS.showShortcuts)}
+          >
+            <span className={styles.quickActionIcon}>
+              <Command size={17} />
+            </span>
+            <span className={styles.quickActionLabel}>All shortcuts</span>
+            <span className={styles.quickActionShortcut}>{keyFor('showShortcuts')}</span>
+          </button>
+
+          <button
+            type="button"
+            className={styles.quickAction}
+            onClick={() => onNavigate('launch-sets')}
+          >
+            <span className={styles.quickActionIcon}>
+              <Layers size={17} />
+            </span>
+            <span className={styles.quickActionLabel}>Launch sets</span>
+            <span className={styles.quickActionShortcut}>{keyFor('navLaunchSets')}</span>
+          </button>
+        </div>
+      </section>
+
+      {/* Pinned */}
+      {pinned.length > 0 && (
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>
+              <Pin size={14} className={styles.sectionTitleIcon} />
+              Pinned
+            </h2>
+          </div>
+          <div className={styles.projectRows}>{pinned.map(renderProjectRow)}</div>
+        </section>
+      )}
+
+      {/* Recent */}
+      <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h3 className={styles.sectionTitle}>Recent Projects</h3>
+          <h2 className={styles.sectionTitle}>
+            <Clock size={14} className={styles.sectionTitleIcon} />
+            Recently updated
+          </h2>
           <button
             type="button"
             className={styles.sectionAction}
             onClick={() => onNavigate('projects')}
           >
-            View all →
+            View all
           </button>
         </div>
-        <div className={styles.recentGrid}>
-          {recentProjects.map((project) => (
-            <div
-              key={project.id}
-              className={styles.recentCard}
-              onClick={() => {
-                onNavigate('projects');
-                // Could dispatch event to select this project
-              }}
-            >
-              <div className={styles.recentCardIcon}>
-                {project.icon || project.name.charAt(0).toUpperCase()}
-              </div>
-              <div className={styles.recentCardInfo}>
-                <div className={styles.recentCardName}>{project.name}</div>
-                <div className={styles.recentCardPath}>{shortenPath(project.localPath)}</div>
-              </div>
-              <span className={styles.recentCardTime}>
-                {formatRelativeTime(project.updatedAt)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+        <div className={styles.projectRows}>{recent.map(renderProjectRow)}</div>
+      </section>
 
-      {/* Status Breakdown */}
-      <div>
-        <div className={styles.sectionHeader}>
-          <h3 className={styles.sectionTitle}>By Status</h3>
-        </div>
-        <div className={styles.statusBreakdown}>
-          {statusCounts.map((status) => (
-            <div
-              key={status.id}
-              className={styles.statusItem}
-              onClick={() => onNavigate('projects')}
+      {/* Launch sets */}
+      {recentSets.length > 0 && (
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>
+              <Layers size={14} className={styles.sectionTitleIcon} />
+              Launch sets
+            </h2>
+            <button
+              type="button"
+              className={styles.sectionAction}
+              onClick={() => onNavigate('launch-sets')}
             >
-              <span
-                className={styles.statusDot}
-                style={{ backgroundColor: status.color }}
-              />
-              <span className={styles.statusLabel}>{status.label}</span>
-              <span className={styles.statusCount}>{status.count}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+              View all
+            </button>
+          </div>
+          <div className={styles.projectRows}>
+            {recentSets.map((set) => (
+              <button
+                key={set.id}
+                type="button"
+                className={styles.projectRow}
+                onClick={() => onNavigate('launch-sets')}
+              >
+                <span className={styles.projectRowIcon}>
+                  <Play size={13} />
+                </span>
+                <span className={styles.projectRowInfo}>
+                  <span className={styles.projectRowName}>{set.name}</span>
+                  <span className={styles.projectRowPath}>
+                    {set.projectIds.length} project{set.projectIds.length === 1 ? '' : 's'}
+                  </span>
+                </span>
+                <span className={styles.projectRowTime}>
+                  {set.lastUsedAt > 0 ? formatRelativeTime(set.lastUsedAt) : 'Not used yet'}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Status filters: each one is a jump into a filtered list. */}
+      {statusCounts.length > 1 && (
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Jump to</h2>
+          </div>
+          <div className={styles.statusBreakdown}>
+            {statusCounts.map((status) => (
+              <button
+                key={status.id}
+                type="button"
+                className={styles.statusItem}
+                onClick={() =>
+                  goToProjects(() => emitAppEvent(APP_EVENTS.filterStatus, status.id))
+                }
+              >
+                <span
+                  className={styles.statusDot}
+                  style={{ backgroundColor: status.color }}
+                />
+                <span className={styles.statusLabel}>{status.label}</span>
+                <span className={styles.statusCount}>{status.count}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

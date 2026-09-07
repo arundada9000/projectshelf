@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Plus,
   Layers,
@@ -25,7 +25,24 @@ import {
   Modal,
   useToast,
 } from '@/components/ui';
+import { loadToolContext, type ToolContext } from '@/lib/commands/resolver';
+import { LaunchPreviewModal } from './LaunchPreviewModal';
+import { useLoadOnMount } from '@/lib/hooks/useLoadOnMount';
 import styles from './LaunchSets.module.css';
+
+// ── Helpers ────────────────────────────────────────────────
+
+function formatRelativeTime(timestamp: number): string {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return `${Math.floor(days / 30)}mo ago`;
+}
 
 // ── Launch Sets View ───────────────────────────────────────
 
@@ -36,15 +53,25 @@ export function LaunchSetsView() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSet, setEditingSet] = useState<LaunchSet | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<LaunchSet | null>(null);
+
+  // Configuration used to generate the commands for a set.
+  const [toolContext, setToolContext] = useState<ToolContext | null>(null);
+  const [launchPreview, setLaunchPreview] = useState<{
+    set: LaunchSet;
+    projects: Project[];
+  } | null>(null);
 
   const loadData = useCallback(async () => {
     try {
-      const [sets, projs] = await Promise.all([
+      const [sets, projs, context] = await Promise.all([
         getAllLaunchSets(),
         getAllProjects(),
+        loadToolContext(),
       ]);
-      setLaunchSets(sets);
+      setLaunchSets([...sets].sort((a, b) => b.lastUsedAt - a.lastUsedAt));
       setProjects(projs);
+      setToolContext(context);
     } catch {
       toast('Failed to load launch sets', 'error');
     } finally {
@@ -52,9 +79,7 @@ export function LaunchSetsView() {
     }
   }, [toast]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useLoadOnMount(loadData);
 
   const handleCreateSet = useCallback(() => {
     setEditingSet(null);
@@ -99,12 +124,33 @@ export function LaunchSetsView() {
     [loadData, toast]
   );
 
+  /**
+   * Generate the commands for every project in a set, using the same
+   * configuration and precedence as a normal multi-selection.
+   */
   const handleLaunchSet = useCallback(
     (set: LaunchSet) => {
-      toast(`Launching "${set.name}" — opening ${set.projectIds.length} project(s)`, 'info');
-      // Future: will actually open editor/terminal/browser per project
+      if (!toolContext) return;
+
+      const members = set.projectIds
+        .map((id) => projects.find((p) => p.id === id))
+        .filter((p): p is Project => Boolean(p));
+
+      if (members.length === 0) {
+        toast(`"${set.name}" has no projects in it yet`, 'info');
+        return;
+      }
+
+      setLaunchPreview({ set, projects: members });
+
+      // Record the launch so sets can be sorted by recent use.
+      updateLaunchSet({ ...set, lastUsedAt: Date.now() })
+        .then(loadData)
+        .catch(() => {
+          // Not being able to record this should not block the launch.
+        });
     },
-    [toast]
+    [toolContext, projects, toast, loadData]
   );
 
   if (loading) return null;
@@ -115,8 +161,9 @@ export function LaunchSetsView() {
         <Layers size={48} className={styles.emptyIcon} />
         <h2 className={styles.emptyTitle}>No launch sets yet</h2>
         <p className={styles.emptyDesc}>
-          Launch sets let you open groups of projects together — in your editor, terminal,
-          and browser — all with one click. Add projects first, then create a launch set.
+          A launch set groups projects you work on together. Launching one generates
+          the commands for every project in it at once. Add a project first, then
+          create your first set.
         </p>
       </div>
     );
@@ -126,7 +173,8 @@ export function LaunchSetsView() {
     <div className={styles.launchSets}>
       <div className={styles.launchSetHeader}>
         <p className={styles.launchSetDesc}>
-          Group projects and launch them together. Open your editor, terminal, and browser for each project in one action.
+          Group projects you work on together, then generate the commands for all of
+          them in one action.
         </p>
         <Button
           variant="primary"
@@ -163,6 +211,9 @@ export function LaunchSetsView() {
                     <div className={styles.setCardTitle}>{set.name}</div>
                     <div className={styles.setCardMeta}>
                       {setProjects.length} project{setProjects.length !== 1 ? 's' : ''}
+                      {set.lastUsedAt > 0 && (
+                        <> {'·'} last used {formatRelativeTime(set.lastUsedAt)}</>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -210,7 +261,7 @@ export function LaunchSetsView() {
                     variant="ghost"
                     size="sm"
                     icon={<Trash2 size={13} />}
-                    onClick={() => handleDeleteSet(set.id)}
+                    onClick={() => setConfirmDelete(set)}
                   >
                     Delete
                   </Button>
@@ -228,44 +279,80 @@ export function LaunchSetsView() {
         launchSet={editingSet}
         projects={projects}
       />
+
+      {launchPreview && toolContext && (
+        <LaunchPreviewModal
+          set={launchPreview.set}
+          projects={launchPreview.projects}
+          toolContext={toolContext}
+          onClose={() => setLaunchPreview(null)}
+        />
+      )}
+
+      <Modal
+        open={confirmDelete !== null}
+        onClose={() => setConfirmDelete(null)}
+        title={`Delete ${confirmDelete?.name ?? ''}?`}
+        description="The set is removed. The projects in it are not affected."
+        size="narrow"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setConfirmDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                if (confirmDelete) handleDeleteSet(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              Delete
+            </Button>
+          </>
+        }
+      >
+        <span />
+      </Modal>
     </div>
   );
 }
 
 // ── Launch Set Modal ───────────────────────────────────────
 
-interface LaunchSetModalProps {
+export interface LaunchSetModalProps {
   open: boolean;
   onClose: () => void;
   onSave: (set: LaunchSet) => void;
-  launchSet: LaunchSet | null;
+  launchSet?: LaunchSet | null;
   projects: Project[];
+  defaultProjectIds?: string[];
 }
 
-function LaunchSetModal({
+export function LaunchSetModal(props: LaunchSetModalProps) {
+  // Remount per open so the fields start from the set being edited.
+  if (!props.open) return null;
+  return (
+    <LaunchSetModalBody
+      key={props.launchSet?.id ?? `new-${(props.defaultProjectIds ?? []).join(',')}`}
+      {...props}
+    />
+  );
+}
+
+function LaunchSetModalBody({
   open,
   onClose,
   onSave,
   launchSet,
   projects,
+  defaultProjectIds,
 }: LaunchSetModalProps) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (open) {
-      if (launchSet) {
-        setName(launchSet.name);
-        setDescription(launchSet.description);
-        setSelectedIds(new Set(launchSet.projectIds));
-      } else {
-        setName('');
-        setDescription('');
-        setSelectedIds(new Set());
-      }
-    }
-  }, [open, launchSet]);
+  const [name, setName] = useState(() => launchSet?.name ?? '');
+  const [description, setDescription] = useState(() => launchSet?.description ?? '');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(
+    () => new Set(launchSet ? launchSet.projectIds : (defaultProjectIds ?? []))
+  );
 
   const toggleProject = (id: string) => {
     setSelectedIds((prev) => {

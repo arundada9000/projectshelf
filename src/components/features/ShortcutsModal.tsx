@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Modal } from '@/components/ui';
-import { DEFAULT_SHORTCUTS } from '@/lib/db/presets';
+import { getAllShortcuts } from '@/lib/db';
+import { APP_EVENTS } from '@/lib/actions';
 import { formatKeyCombo } from '@/lib/hooks/useHotkeys';
-import type { ShortcutScope } from '@/lib/db/schema';
+import type { ShortcutScope, ShortcutDefinition } from '@/lib/db/schema';
 import styles from './CommandPalette.module.css';
 
 // ── Scope Labels ───────────────────────────────────────────
@@ -33,9 +34,28 @@ export interface ShortcutsModalProps {
 }
 
 export function ShortcutsModal({ open, onClose }: ShortcutsModalProps) {
-  // Group shortcuts by scope
-  const grouped = new Map<ShortcutScope, typeof DEFAULT_SHORTCUTS>();
-  for (const shortcut of DEFAULT_SHORTCUTS) {
+  const [shortcuts, setShortcuts] = useState<ShortcutDefinition[]>([]);
+
+  const load = useCallback(() => {
+    getAllShortcuts()
+      .then(setShortcuts)
+      .catch(() => setShortcuts([]));
+  }, []);
+
+  // Read the user's live bindings, not the presets, so a rebound key
+  // is reflected here immediately.
+  useEffect(() => {
+    if (open) load();
+  }, [open, load]);
+
+  useEffect(() => {
+    document.addEventListener(APP_EVENTS.shortcutsChanged, load);
+    return () => document.removeEventListener(APP_EVENTS.shortcutsChanged, load);
+  }, [load]);
+
+  const grouped = new Map<ShortcutScope, ShortcutDefinition[]>();
+  for (const shortcut of shortcuts) {
+    if (!shortcut.keyCombo) continue;
     const existing = grouped.get(shortcut.scope) ?? [];
     existing.push(shortcut);
     grouped.set(shortcut.scope, existing);

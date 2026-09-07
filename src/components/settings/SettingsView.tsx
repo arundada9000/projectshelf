@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Palette,
-  Type,
   Terminal,
   Code2,
   Keyboard,
@@ -11,16 +10,118 @@ import {
   Download,
   Upload,
   Trash2,
+  SlidersHorizontal,
+  AppWindow,
+  SquareTerminal,
+  AlertTriangle,
 } from 'lucide-react';
-import type { ThemeName, FontName, DensityMode, UserSettings } from '@/lib/db/schema';
-import { getSettings, updateSettings, clearAllData } from '@/lib/db';
-import { exportAllData, downloadJSON } from '@/lib/db/import-export';
-import { Button, Switch, Select, useToast } from '@/components/ui';
+import type {
+  ThemeName,
+  FontName,
+  DensityMode,
+  ViewMode,
+  UserSettings,
+  TerminalDefinition,
+  EditorDefinition,
+  ToolDefinition,
+  ExportData,
+} from '@/lib/db/schema';
+import {
+  getSettings,
+  updateSettings,
+  clearAllData,
+  getAllTerminals,
+  addTerminal,
+  updateTerminal,
+  deleteTerminal,
+  getAllEditors,
+  addEditor,
+  updateEditor,
+  deleteEditor,
+  getAllTools,
+  addTool,
+  updateTool,
+  deleteTool,
+  generateId,
+} from '@/lib/db';
+import {
+  exportAllData,
+  downloadJSON,
+  validateImportData,
+  importData,
+  type ImportValidation,
+} from '@/lib/db/import-export';
+import { Button, Switch, Select, Modal, useToast } from '@/components/ui';
+import { applyAppearance } from '@/lib/appearance';
+import { CollectionSection, type CollectionField } from './sections/CollectionSection';
+import { CommandsSection } from './sections/CommandsSection';
+import { ShortcutsSection } from './sections/ShortcutsSection';
 import styles from './Settings.module.css';
+
+// ── Field Definitions for Configurable Collections ─────────
+
+const TERMINAL_FIELDS: CollectionField[] = [
+  {
+    key: 'executable',
+    label: 'Executable',
+    placeholder: 'powershell.exe',
+    helpText: 'The program launched for this terminal.',
+  },
+  {
+    key: 'commandPrefix',
+    label: 'Directory change prefix',
+    placeholder: 'cd',
+    helpText: 'How this shell changes directory. Command Prompt uses "cd /d".',
+    advanced: true,
+  },
+  {
+    key: 'defaultArgs',
+    label: 'Default arguments',
+    placeholder: '-NoExit',
+    advanced: true,
+  },
+];
+
+const EDITOR_FIELDS: CollectionField[] = [
+  {
+    key: 'openCommandTemplate',
+    label: 'Open command',
+    placeholder: 'code "{path}"',
+    helpText: 'Use {path} for the project folder.',
+  },
+  {
+    key: 'executable',
+    label: 'Executable',
+    placeholder: 'code',
+    advanced: true,
+  },
+];
+
+const TOOL_FIELDS: CollectionField[] = [
+  {
+    key: 'category',
+    label: 'Category',
+    placeholder: 'file-manager',
+    helpText: 'Free text, for example file-manager, browser, or git-tool.',
+  },
+  {
+    key: 'commandTemplate',
+    label: 'Command',
+    placeholder: 'explorer "{path}"',
+    helpText: 'Use {path}, {name}, {github}, or {url}.',
+  },
+  {
+    key: 'executable',
+    label: 'Executable',
+    placeholder: 'explorer.exe',
+    advanced: true,
+  },
+];
 
 // ── Theme Definitions ──────────────────────────────────────
 
 const THEMES: { id: ThemeName; label: string; bg: string; surface: string; accent: string }[] = [
+  { id: 'system', label: 'System', bg: '#ffffff', surface: '#18181b', accent: '#3b82f6' },
   { id: 'light', label: 'Light', bg: '#ffffff', surface: '#f4f4f5', accent: '#3b82f6' },
   { id: 'dark', label: 'Dark', bg: '#09090b', surface: '#18181b', accent: '#3b82f6' },
   { id: 'midnight', label: 'Midnight', bg: '#020617', surface: '#0f172a', accent: '#6366f1' },
@@ -47,34 +148,79 @@ const FONTS: { id: FontName; label: string; sample: string; family: string }[] =
 
 // ── Settings Sections ──────────────────────────────────────
 
-type SettingsTab = 'appearance' | 'data';
+type SettingsTab =
+  | 'general'
+  | 'appearance'
+  | 'terminals'
+  | 'editors'
+  | 'applications'
+  | 'commands'
+  | 'shortcuts'
+  | 'data';
+
+interface SettingsTabDef {
+  id: SettingsTab;
+  label: string;
+  icon: React.ReactNode;
+}
+
+const SETTINGS_TABS: SettingsTabDef[] = [
+  { id: 'general', label: 'General', icon: <SlidersHorizontal size={16} /> },
+  { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
+  { id: 'terminals', label: 'Terminals', icon: <Terminal size={16} /> },
+  { id: 'editors', label: 'Editors', icon: <Code2 size={16} /> },
+  { id: 'applications', label: 'Applications', icon: <AppWindow size={16} /> },
+  { id: 'commands', label: 'Commands', icon: <SquareTerminal size={16} /> },
+  { id: 'shortcuts', label: 'Shortcuts', icon: <Keyboard size={16} /> },
+  { id: 'data', label: 'Data', icon: <Database size={16} /> },
+];
 
 // ── Settings View ──────────────────────────────────────────
 
 export function SettingsView() {
   const { toast } = useToast();
   const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
+  const [terminals, setTerminals] = useState<TerminalDefinition[]>([]);
+  const [editors, setEditors] = useState<EditorDefinition[]>([]);
+  const [fileManagers, setFileManagers] = useState<ToolDefinition[]>([]);
+  const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Import is a two-step flow: validate and show what will happen, then apply.
+  const [pendingImport, setPendingImport] = useState<{
+    raw: unknown;
+    validation: ImportValidation;
+  } | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+
+  /** Reload the tool collections that the default pickers depend on. */
+  const reloadTools = useCallback(() => {
+    Promise.all([getAllTerminals(), getAllEditors(), getAllTools()]).then(
+      ([t, e, tools]) => {
+        setTerminals(t);
+        setEditors(e);
+        setFileManagers(tools);
+      }
+    );
+  }, []);
 
   useEffect(() => {
     getSettings().then(setSettings);
-  }, []);
+    reloadTools();
+  }, [reloadTools]);
 
   const update = useCallback(
     async (partial: Partial<UserSettings>) => {
       const updated = await updateSettings(partial);
       setSettings(updated);
 
-      // Apply theme/font/density to DOM immediately
-      if (partial.theme) {
-        document.documentElement.setAttribute('data-theme', partial.theme);
-      }
-      if (partial.font) {
-        document.documentElement.setAttribute('data-font', partial.font);
-      }
-      if (partial.density) {
-        document.documentElement.setAttribute('data-density', partial.density);
-      }
+      // Apply to the document and mirror to localStorage so the choice
+      // survives a reload.
+      applyAppearance({
+        theme: partial.theme,
+        font: partial.font,
+        density: partial.density,
+      });
     },
     []
   );
@@ -89,39 +235,70 @@ export function SettingsView() {
     }
   }, [toast]);
 
+  /** Step one: read and validate, then show the user what the file holds. */
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const raw = JSON.parse(await file.text());
+      setPendingImport({ raw, validation: validateImportData(raw) });
+    } catch {
+      toast('That file is not valid JSON', 'error');
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  /** Step two: apply, once the user has seen the record counts. */
+  const handleConfirmImport = useCallback(async () => {
+    if (!pendingImport) return;
+    try {
+      // Shape already checked by validateImportData before this dialog opened.
+      const result = await importData(pendingImport.raw as ExportData, 'merge');
+      setPendingImport(null);
+      setSettings(await getSettings());
+      reloadTools();
+      toast(
+        `Imported ${result.imported.projects} projects and ${result.imported.launchSets} launch sets`,
+        'success'
+      );
+    } catch {
+      toast('Import failed. Your existing data is unchanged.', 'error');
+    }
+  }, [pendingImport, toast, reloadTools]);
+
   const handleClearData = useCallback(async () => {
     try {
       await clearAllData();
-      const fresh = await getSettings();
-      setSettings(fresh);
-      toast('All data cleared and defaults restored', 'success');
+      setConfirmClear(false);
+      setSettings(await getSettings());
+      reloadTools();
+      toast('All data cleared and presets restored', 'success');
     } catch {
-      toast('Failed to clear data', 'error');
+      toast('Could not clear the data', 'error');
     }
-  }, [toast]);
+  }, [toast, reloadTools]);
 
   if (!settings) return null;
 
   return (
     <div className={styles.settingsLayout}>
       {/* Sidebar Nav */}
-      <nav className={styles.settingsNav}>
-        <button
-          type="button"
-          className={`${styles.settingsNavItem} ${activeTab === 'appearance' ? styles.settingsNavItemActive : ''}`}
-          onClick={() => setActiveTab('appearance')}
-        >
-          <Palette size={16} />
-          Appearance
-        </button>
-        <button
-          type="button"
-          className={`${styles.settingsNavItem} ${activeTab === 'data' ? styles.settingsNavItemActive : ''}`}
-          onClick={() => setActiveTab('data')}
-        >
-          <Database size={16} />
-          Data
-        </button>
+      <nav className={styles.settingsNav} aria-label="Settings sections">
+        {SETTINGS_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            className={`${styles.settingsNavItem} ${
+              activeTab === tab.id ? styles.settingsNavItemActive : ''
+            }`}
+            aria-current={activeTab === tab.id ? 'page' : undefined}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
       </nav>
 
       {/* Content */}
@@ -132,7 +309,7 @@ export function SettingsView() {
             <div className={styles.settingsSection}>
               <h3 className={styles.settingsSectionTitle}>Theme</h3>
               <p className={styles.settingsSectionDesc}>
-                Choose a color theme for the interface. 12 handcrafted palettes.
+                Twelve palettes, plus System to follow your operating system.
               </p>
               <div className={styles.themeGrid}>
                 {THEMES.map((theme) => (
@@ -220,6 +397,205 @@ export function SettingsView() {
           </>
         )}
 
+        {activeTab === 'general' && (
+          <>
+            <div className={styles.settingsSection}>
+              <h3 className={styles.settingsSectionTitle}>Defaults</h3>
+              <p className={styles.settingsSectionDesc}>
+                Used whenever an action does not specify a tool. A project can override
+                these, and any single action can be run with a different tool through
+                &quot;Open with&quot;.
+              </p>
+
+              <div className={styles.settingsRow}>
+                <div className={styles.settingsRowInfo}>
+                  <span className={styles.settingsRowLabel}>Default editor</span>
+                  <span className={styles.settingsRowDesc}>
+                    Used by the Open in editor action
+                  </span>
+                </div>
+                <div className={styles.settingsRowControl}>
+                  <Select
+                    options={editors
+                      .filter((e) => e.enabled)
+                      .map((e) => ({ value: e.id, label: e.name }))}
+                    value={settings.defaultEditorId}
+                    onChange={(v) => update({ defaultEditorId: v })}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.settingsRow}>
+                <div className={styles.settingsRowInfo}>
+                  <span className={styles.settingsRowLabel}>Default terminal</span>
+                  <span className={styles.settingsRowDesc}>
+                    Used by the Open in terminal action
+                  </span>
+                </div>
+                <div className={styles.settingsRowControl}>
+                  <Select
+                    options={terminals
+                      .filter((t) => t.enabled)
+                      .map((t) => ({ value: t.id, label: t.name }))}
+                    value={settings.defaultTerminalId}
+                    onChange={(v) => update({ defaultTerminalId: v })}
+                  />
+                </div>
+              </div>
+
+              <div className={styles.settingsRow}>
+                <div className={styles.settingsRowInfo}>
+                  <span className={styles.settingsRowLabel}>Default file manager</span>
+                  <span className={styles.settingsRowDesc}>
+                    Used by the Open folder action
+                  </span>
+                </div>
+                <div className={styles.settingsRowControl}>
+                  <Select
+                    options={fileManagers
+                      .filter((t) => t.enabled)
+                      .map((t) => ({ value: t.id, label: t.name }))}
+                    value={settings.defaultFileManagerId}
+                    onChange={(v) => update({ defaultFileManagerId: v })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.settingsSection}>
+              <h3 className={styles.settingsSectionTitle}>Behaviour</h3>
+
+              <div className={styles.settingsRow}>
+                <div className={styles.settingsRowInfo}>
+                  <span className={styles.settingsRowLabel}>
+                    Confirm before deleting
+                  </span>
+                  <span className={styles.settingsRowDesc}>
+                    Ask first when deleting projects, launch sets, or all local data
+                  </span>
+                </div>
+                <div className={styles.settingsRowControl}>
+                  <Switch
+                    checked={settings.confirmDestructive}
+                    onChange={(v) => update({ confirmDestructive: v })}
+                    ariaLabel="Confirm before deleting"
+                  />
+                </div>
+              </div>
+
+              <div className={styles.settingsRow}>
+                <div className={styles.settingsRowInfo}>
+                  <span className={styles.settingsRowLabel}>Default project view</span>
+                  <span className={styles.settingsRowDesc}>
+                    The layout the projects view opens in
+                  </span>
+                </div>
+                <div className={styles.settingsRowControl}>
+                  <Select
+                    options={[
+                      { value: 'grid', label: 'Grid' },
+                      { value: 'list', label: 'List' },
+                    ]}
+                    value={settings.defaultView}
+                    onChange={(v) => update({ defaultView: v as ViewMode })}
+                  />
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'terminals' && (
+          <CollectionSection<TerminalDefinition>
+            title="Terminals"
+            description="Shells the command generator can target. The presets assume Windows; add your own for macOS or Linux."
+            itemNoun="terminal"
+            metaKey="executable"
+            emptyMessage="No terminals configured. Add one to generate terminal commands."
+            supportsDefault
+            fields={TERMINAL_FIELDS}
+            load={getAllTerminals}
+            create={addTerminal}
+            update={updateTerminal}
+            remove={deleteTerminal}
+            makeBlank={(order) => ({
+              id: generateId(),
+              name: '',
+              executable: '',
+              defaultArgs: '',
+              commandPrefix: '',
+              icon: 'terminal',
+              enabled: true,
+              isDefault: false,
+              isBuiltIn: false,
+              order,
+            })}
+            onDefaultChange={(id) => update({ defaultTerminalId: id })}
+            onChanged={reloadTools}
+          />
+        )}
+
+        {activeTab === 'editors' && (
+          <CollectionSection<EditorDefinition>
+            title="Editors"
+            description="Editors and IDEs you open projects with. Add any command line launcher."
+            itemNoun="editor"
+            metaKey="openCommandTemplate"
+            emptyMessage="No editors configured. Add one to open projects in an editor."
+            supportsDefault
+            fields={EDITOR_FIELDS}
+            load={getAllEditors}
+            create={addEditor}
+            update={updateEditor}
+            remove={deleteEditor}
+            makeBlank={(order) => ({
+              id: generateId(),
+              name: '',
+              executable: '',
+              openCommandTemplate: '',
+              icon: 'code',
+              enabled: true,
+              isDefault: false,
+              isBuiltIn: false,
+              order,
+            })}
+            onDefaultChange={(id) => update({ defaultEditorId: id })}
+            onChanged={reloadTools}
+          />
+        )}
+
+        {activeTab === 'applications' && (
+          <CollectionSection<ToolDefinition>
+            title="Applications"
+            description="File managers, browsers, git clients, and anything else you launch against a project. Set the category to group them."
+            itemNoun="application"
+            metaKey="commandTemplate"
+            emptyMessage="No applications configured yet."
+            fields={TOOL_FIELDS}
+            load={getAllTools}
+            create={addTool}
+            update={updateTool}
+            remove={deleteTool}
+            makeBlank={(order) => ({
+              id: generateId(),
+              name: '',
+              category: 'custom',
+              executable: '',
+              commandTemplate: '',
+              icon: 'app-window',
+              enabled: true,
+              isDefault: false,
+              isBuiltIn: false,
+              order,
+            })}
+            onChanged={reloadTools}
+          />
+        )}
+
+        {activeTab === 'commands' && <CommandsSection onChanged={reloadTools} />}
+
+        {activeTab === 'shortcuts' && <ShortcutsSection />}
+
         {activeTab === 'data' && (
           <>
             <div className={styles.settingsSection}>
@@ -243,6 +619,30 @@ export function SettingsView() {
                   </Button>
                 </div>
               </div>
+
+              <div className={styles.settingsRow}>
+                <div className={styles.settingsRowInfo}>
+                  <span className={styles.settingsRowLabel}>Import backup</span>
+                  <span className={styles.settingsRowDesc}>Restore projects, launch sets, and settings from a JSON backup file</span>
+                </div>
+                <div className={styles.settingsRowControl}>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept=".json,application/json"
+                    style={{ display: 'none' }}
+                    onChange={handleImportFile}
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={<Upload size={14} />}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Import JSON
+                  </Button>
+                </div>
+              </div>
             </div>
 
             <div className={styles.settingsSection}>
@@ -257,7 +657,9 @@ export function SettingsView() {
                   variant="danger"
                   size="sm"
                   icon={<Trash2 size={14} />}
-                  onClick={handleClearData}
+                  onClick={() =>
+                    settings.confirmDestructive ? setConfirmClear(true) : handleClearData()
+                  }
                 >
                   Clear All Data
                 </Button>
@@ -266,6 +668,109 @@ export function SettingsView() {
           </>
         )}
       </div>
+
+      {/* Import preview: what the file holds, before anything is written. */}
+      <Modal
+        open={pendingImport !== null}
+        onClose={() => setPendingImport(null)}
+        title="Import backup"
+        description={
+          pendingImport?.validation.valid
+            ? 'These records will be merged into your existing data. Records with matching ids are replaced.'
+            : 'This file cannot be imported.'
+        }
+        size="default"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setPendingImport(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              disabled={!pendingImport?.validation.valid}
+              onClick={handleConfirmImport}
+            >
+              Import
+            </Button>
+          </>
+        }
+      >
+        {pendingImport && (
+          <div className={styles.collectionList}>
+            {pendingImport.validation.errors.length > 0 && (
+              <div className={styles.settingsNotice} role="alert">
+                <AlertTriangle size={15} className={styles.settingsNoticeIcon} />
+                <span>{pendingImport.validation.errors.join('. ')}</span>
+              </div>
+            )}
+
+            {pendingImport.validation.warnings.length > 0 && (
+              <div className={styles.settingsNotice} role="status">
+                <AlertTriangle size={15} className={styles.settingsNoticeIcon} />
+                <span>{pendingImport.validation.warnings.join('. ')}</span>
+              </div>
+            )}
+
+            {pendingImport.validation.valid && (
+              <>
+                <div className={styles.settingsRow}>
+                  <div className={styles.settingsRowInfo}>
+                    <span className={styles.settingsRowLabel}>Backup format version</span>
+                  </div>
+                  <div className={styles.settingsRowControl}>
+                    {pendingImport.validation.version ?? 'unknown'}
+                  </div>
+                </div>
+
+                {Object.entries(pendingImport.validation.counts).map(([key, count]) => (
+                  <div key={key} className={styles.settingsRow}>
+                    <div className={styles.settingsRowInfo}>
+                      <span className={styles.settingsRowLabel}>
+                        {IMPORT_LABELS[key] ?? key}
+                      </span>
+                    </div>
+                    <div className={styles.settingsRowControl}>{count}</div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Clearing local data is irreversible, so it always confirms. */}
+      <Modal
+        open={confirmClear}
+        onClose={() => setConfirmClear(false)}
+        title="Clear all data?"
+        description="Every project, launch set, and customisation stored in this browser is deleted and the built-in presets are restored. This cannot be undone. Export a backup first if you want to keep anything."
+        size="narrow"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setConfirmClear(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleClearData}>
+              Delete everything
+            </Button>
+          </>
+        }
+      >
+        <span />
+      </Modal>
     </div>
   );
 }
+
+// ── Import Preview Labels ──────────────────────────────────
+
+const IMPORT_LABELS: Record<string, string> = {
+  projects: 'Projects',
+  commands: 'Commands',
+  terminals: 'Terminals',
+  editors: 'Editors',
+  tools: 'Applications',
+  launchSets: 'Launch sets',
+  shortcuts: 'Shortcuts',
+  tags: 'Tags',
+};

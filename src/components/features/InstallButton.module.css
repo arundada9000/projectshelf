@@ -1,0 +1,100 @@
+/* ============================================================
+   Install Button
+   ============================================================ */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  border: none;
+  font-family: inherit;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-fast) var(--ease-default),
+    color var(--duration-fast) var(--ease-default),
+    border-color var(--duration-fast) var(--ease-default);
+}
+
+.button:disabled {
+  opacity: var(--opacity-muted);
+  cursor: default;
+}
+
+.button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
+
+/* ── Sidebar variant: reads as a navigation row ─────────── */
+
+.sidebar {
+  width: 100%;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-size: var(--text-sm);
+  text-align: left;
+}
+
+.sidebar:hover:not(:disabled) {
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.sidebar .icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 18px;
+}
+
+/* ── Standalone variant: a pill for the landing footer ──── */
+
+.standalone {
+  height: 34px;
+  padding: 0 var(--space-8);
+  border-radius: var(--radius-full);
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: var(--text-sm);
+}
+
+.standalone:hover:not(:disabled) {
+  background-color: var(--color-accent-hover);
+}
+
+.standalone .icon {
+  display: flex;
+  align-items: center;
+}
+
+/* ── Collapsed sidebar ──────────────────────────────────── */
+
+.compact {
+  justify-content: center;
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
+}
+
+.compact .label {
+  display: none;
+}
+
+/* ── Already installed ──────────────────────────────────── */
+
+.installed {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 34px;
+  padding: 0 var(--space-7);
+  border-radius: var(--radius-full);
+  background-color: var(--color-success-subtle);
+  color: var(--color-success-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}

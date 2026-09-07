@@ -10,14 +10,19 @@ import {
   Keyboard,
   LayoutDashboard,
   Layers,
-  Palette,
-  Type,
   LayoutGrid,
-  List,
-  Download,
-  Upload,
   Trash2,
+  Command,
+  CheckSquare,
+  X,
+  Code2,
+  Terminal,
+  FolderOpen,
+  Copy,
+  ClipboardList,
 } from 'lucide-react';
+import type { ShortcutDefinition, ShortcutScope } from '@/lib/db/schema';
+import { APP_ACTIONS } from '@/lib/actions';
 import { formatKeyCombo } from '@/lib/hooks/useHotkeys';
 import styles from './CommandPalette.module.css';
 
@@ -30,6 +35,9 @@ export interface PaletteItem {
   shortcut?: string;
   section: string;
   action: () => void;
+  /** Shown but not activatable, with `reason` explaining why. */
+  disabled?: boolean;
+  reason?: string;
 }
 
 // ── Command Palette ────────────────────────────────────────
@@ -40,7 +48,14 @@ export interface CommandPaletteProps {
   items: PaletteItem[];
 }
 
-export function CommandPalette({ open, onClose, items }: CommandPaletteProps) {
+export function CommandPalette(props: CommandPaletteProps) {
+  // Mounting only while open means the query and highlight start fresh
+  // every time, without synchronising state from an effect.
+  if (!props.open) return null;
+  return <CommandPaletteBody {...props} />;
+}
+
+function CommandPaletteBody({ onClose, items }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -71,14 +86,11 @@ export function CommandPalette({ open, onClose, items }: CommandPaletteProps) {
   // Flat list for keyboard navigation
   const flatList = useMemo(() => filtered, [filtered]);
 
-  // Reset on open
+  // Focus the field as soon as the palette appears.
   useEffect(() => {
-    if (open) {
-      setQuery('');
-      setActiveIndex(0);
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
-  }, [open]);
+    const frame = requestAnimationFrame(() => inputRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   // Keyboard navigation
   const handleKeyDown = useCallback(
@@ -92,13 +104,15 @@ export function CommandPalette({ open, onClose, items }: CommandPaletteProps) {
           e.preventDefault();
           setActiveIndex((prev) => (prev > 0 ? prev - 1 : flatList.length - 1));
           break;
-        case 'Enter':
+        case 'Enter': {
           e.preventDefault();
-          if (flatList[activeIndex]) {
-            flatList[activeIndex].action();
+          const item = flatList[activeIndex];
+          if (item && !item.disabled) {
+            item.action();
             onClose();
           }
           break;
+        }
         case 'Escape':
           e.preventDefault();
           onClose();
@@ -113,8 +127,6 @@ export function CommandPalette({ open, onClose, items }: CommandPaletteProps) {
     const activeEl = listRef.current?.querySelector(`[data-index="${activeIndex}"]`);
     activeEl?.scrollIntoView({ block: 'nearest' });
   }, [activeIndex]);
-
-  if (!open) return null;
 
   let itemIndex = 0;
 
@@ -147,7 +159,7 @@ export function CommandPalette({ open, onClose, items }: CommandPaletteProps) {
         <div ref={listRef} className={styles.paletteResults} role="listbox">
           {flatList.length === 0 ? (
             <div className={styles.paletteEmpty}>
-              No commands match "{query}"
+              No commands match &quot;{query}&quot;
             </div>
           ) : (
             Array.from(grouped.entries()).map(([section, sectionItems]) => (
@@ -161,11 +173,13 @@ export function CommandPalette({ open, onClose, items }: CommandPaletteProps) {
                       type="button"
                       className={`${styles.paletteItem} ${
                         currentIndex === activeIndex ? styles.paletteItemActive : ''
-                      }`}
+                      } ${item.disabled ? styles.paletteItemDisabled : ''}`}
                       role="option"
                       aria-selected={currentIndex === activeIndex}
+                      aria-disabled={item.disabled}
                       data-index={currentIndex}
                       onClick={() => {
+                        if (item.disabled) return;
                         item.action();
                         onClose();
                       }}
@@ -175,7 +189,10 @@ export function CommandPalette({ open, onClose, items }: CommandPaletteProps) {
                         <span className={styles.paletteItemIcon}>{item.icon}</span>
                       )}
                       <span className={styles.paletteItemLabel}>{item.label}</span>
-                      {item.shortcut && (
+                      {item.disabled && item.reason && (
+                        <span className={styles.paletteItemReason}>{item.reason}</span>
+                      )}
+                      {!item.disabled && item.shortcut && (
                         <span className={styles.paletteItemShortcut}>
                           {formatKeyCombo(item.shortcut)}
                         </span>
@@ -204,103 +221,87 @@ export function CommandPalette({ open, onClose, items }: CommandPaletteProps) {
   );
 }
 
-// ── Build Default Palette Items ────────────────────────────
+// ── Build Palette Items ────────────────────────────────────
 
-export function buildDefaultPaletteItems(actions: {
-  navigate: (page: string) => void;
-  createProject: () => void;
-  toggleView: () => void;
-  showShortcuts: () => void;
-  openSettings: () => void;
-  openManual: () => void;
-  exportData: () => void;
-  importData: () => void;
-}): PaletteItem[] {
-  return [
-    // Navigation
-    {
-      id: 'nav-dashboard',
-      label: 'Go to Dashboard',
-      icon: <LayoutDashboard size={16} />,
-      shortcut: 'alt+1',
-      section: 'Navigation',
-      action: () => actions.navigate('dashboard'),
-    },
-    {
-      id: 'nav-projects',
-      label: 'Go to Projects',
-      icon: <FolderKanban size={16} />,
-      shortcut: 'alt+2',
-      section: 'Navigation',
-      action: () => actions.navigate('projects'),
-    },
-    {
-      id: 'nav-launch-sets',
-      label: 'Go to Launch Sets',
-      icon: <Layers size={16} />,
-      shortcut: 'alt+3',
-      section: 'Navigation',
-      action: () => actions.navigate('launch-sets'),
-    },
+const ACTION_ICONS: Record<string, React.ReactNode> = {
+  openCommandPalette: <Command size={16} />,
+  focusSearch: <Search size={16} />,
+  showShortcuts: <Keyboard size={16} />,
+  createProject: <Plus size={16} />,
+  openSettings: <Settings size={16} />,
+  openManual: <BookOpen size={16} />,
+  selectAll: <CheckSquare size={16} />,
+  clearSelection: <X size={16} />,
+  toggleView: <LayoutGrid size={16} />,
+  deleteSelected: <Trash2 size={16} />,
+  openInEditor: <Code2 size={16} />,
+  openInTerminal: <Terminal size={16} />,
+  openInExplorer: <FolderOpen size={16} />,
+  copyPaths: <Copy size={16} />,
+  copyCommands: <ClipboardList size={16} />,
+  createLaunchSet: <Layers size={16} />,
+  navDashboard: <LayoutDashboard size={16} />,
+  navProjects: <FolderKanban size={16} />,
+  navLaunchSets: <Layers size={16} />,
+  navSettings: <Settings size={16} />,
+};
 
-    // Actions
-    {
-      id: 'create-project',
-      label: 'Create New Project',
-      icon: <Plus size={16} />,
-      shortcut: 'ctrl+n',
-      section: 'Actions',
-      action: actions.createProject,
-    },
-    {
-      id: 'toggle-view',
-      label: 'Toggle Grid / List View',
-      icon: <LayoutGrid size={16} />,
-      shortcut: 'ctrl+shift+v',
-      section: 'Actions',
-      action: actions.toggleView,
-    },
+const SCOPE_SECTIONS: Record<ShortcutScope, string> = {
+  global: 'Actions',
+  projects: 'Projects',
+  selection: 'Selection',
+  navigation: 'Navigation',
+  'command-palette': 'Actions',
+};
 
-    // Tools
-    {
-      id: 'show-shortcuts',
-      label: 'Keyboard Shortcuts',
-      icon: <Keyboard size={16} />,
-      shortcut: 'shift+?',
-      section: 'Tools',
-      action: actions.showShortcuts,
-    },
-    {
-      id: 'open-settings',
-      label: 'Open Settings',
-      icon: <Settings size={16} />,
-      shortcut: 'ctrl+,',
-      section: 'Tools',
-      action: actions.openSettings,
-    },
-    {
-      id: 'open-manual',
-      label: 'User Manual',
-      icon: <BookOpen size={16} />,
-      shortcut: 'f1',
-      section: 'Tools',
-      action: actions.openManual,
-    },
+export interface BuildPaletteOptions {
+  /** Action id to behaviour. Actions without a handler are omitted. */
+  handlers: Partial<Record<string, () => void>>;
+  /** Current bindings, used to display the right key hint. */
+  shortcuts: ShortcutDefinition[];
+  /** Number of currently selected projects. */
+  selectionCount: number;
+  /** Extra entries that are not registry actions, such as import and export. */
+  extraItems?: PaletteItem[];
+}
 
-    // Data
-    {
-      id: 'export-data',
-      label: 'Export All Data',
-      icon: <Download size={16} />,
-      section: 'Data',
-      action: actions.exportData,
-    },
-    {
-      id: 'import-data',
-      label: 'Import Data',
-      icon: <Upload size={16} />,
-      section: 'Data',
-      action: actions.importData,
-    },
-  ];
+/**
+ * Builds the palette from the action registry so it always matches the
+ * shortcut system. Selection actions stay visible but disabled when nothing
+ * is selected, with the reason shown, rather than silently disappearing.
+ */
+export function buildPaletteItems({
+  handlers,
+  shortcuts,
+  selectionCount,
+  extraItems = [],
+}: BuildPaletteOptions): PaletteItem[] {
+  const comboFor = (actionId: string): string | undefined =>
+    shortcuts.find((shortcut) => shortcut.actionId === actionId)?.keyCombo;
+
+  const items: PaletteItem[] = APP_ACTIONS.flatMap((action) => {
+    const handler = handlers[action.id];
+    if (!handler) return [];
+
+    // The palette is already open when it is being read, so offering
+    // "open command palette" inside it is noise.
+    if (action.id === 'openCommandPalette') return [];
+
+    const needsSelection = action.requiresSelection && selectionCount === 0;
+
+    return [
+      {
+        id: `action-${action.id}`,
+        label: action.label,
+        icon: ACTION_ICONS[action.id],
+        shortcut: comboFor(action.id),
+        section: SCOPE_SECTIONS[action.scope],
+        action: handler,
+        disabled: needsSelection,
+        reason: needsSelection ? 'No projects selected' : undefined,
+      },
+    ];
+  });
+
+  return [...items, ...extraItems];
 }

@@ -139,6 +139,23 @@
   flex-shrink: 0;
 }
 
+/* Unavailable in the current context: shown with the reason rather than hidden. */
+.paletteItemDisabled {
+  cursor: default;
+}
+
+.paletteItemDisabled .paletteItemLabel,
+.paletteItemDisabled .paletteItemIcon {
+  opacity: var(--opacity-disabled, 0.45);
+}
+
+.paletteItemReason {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  font-style: italic;
+}
+
 .paletteEmpty {
   padding: var(--space-10);
   text-align: center;
@@ -200,4 +217,39 @@
 .shortcutKeys {
   display: flex;
   gap: var(--space-1);
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+
+@media (max-width: 767px) {
+  .paletteOverlay {
+    padding: var(--space-7) var(--space-5) 0;
+    align-items: flex-start;
+  }
+
+  .paletteContainer {
+    max-width: none;
+    max-height: 80dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .paletteResults {
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Keyboard hints are meaningless without a keyboard. */
+  .paletteHint,
+  .paletteFooter {
+    display: none;
+  }
+
+  .paletteItemShortcut {
+    display: none;
+  }
+
+  .shortcutsGrid {
+    grid-template-columns: 1fr;
+  }
 }

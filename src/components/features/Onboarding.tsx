@@ -7,7 +7,6 @@ import {
   Search,
   Terminal,
   Settings,
-  Palette,
 } from 'lucide-react';
 import { getSettings, updateSettings } from '@/lib/db';
 import { Button } from '@/components/ui';
@@ -32,7 +31,7 @@ const STEPS: OnboardingStep[] = [
   {
     title: 'Add Your Projects',
     description:
-      'Click "New Project" or press Ctrl+N to add a project. Provide the local path and any metadata. Projects can be tagged, filtered, and sorted.',
+      'Press Ctrl+N to add one. A name and a local path are enough to start. Everything else, including tags, links, and status, is optional and can be filled in later.',
     icon: <FolderKanban size={18} />,
     hints: [
       { keys: ['Ctrl', 'N'], label: 'New project' },
@@ -61,7 +60,7 @@ const STEPS: OnboardingStep[] = [
   {
     title: 'Quick Actions and Terminals',
     description:
-      'Hover any project card for quick actions: open in your editor, launch a terminal, or open the file explorer. Multi-select with Ctrl+Click for batch operations.',
+      'Hover a project for quick actions, or right-click for the full menu. ProjectShelf generates the command and copies it, ready to paste. Select several projects to generate them all at once.',
     icon: <Terminal size={18} />,
     hints: [
       { keys: ['Ctrl', 'E'], label: 'Open in editor' },
@@ -71,7 +70,7 @@ const STEPS: OnboardingStep[] = [
   {
     title: 'Customize Everything',
     description:
-      'Head to Settings (Ctrl+,) to configure themes, fonts, terminals, editors, commands, and shortcuts. Choose from 12 themes and 5 font families.',
+      'Settings covers themes and fonts, your terminals, editors, and applications, the command templates used to generate text, and every keyboard shortcut.',
     icon: <Settings size={18} />,
     hints: [
       { keys: ['Ctrl', ','], label: 'Open settings' },
@@ -118,10 +117,17 @@ export function OnboardingModal() {
 
   return (
     <div className={styles.onboardingOverlay}>
-      <div className={styles.onboardingCard}>
+      <div
+        className={styles.onboardingCard}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="onboarding-title"
+      >
         <div className={styles.onboardingHeader}>
           <div className={styles.onboardingLogo}>PS</div>
-          <h2 className={styles.onboardingTitle}>{currentStep.title}</h2>
+          <h2 id="onboarding-title" className={styles.onboardingTitle}>
+            {currentStep.title}
+          </h2>
           <p className={styles.onboardingSubtitle}>{currentStep.description}</p>
         </div>
 

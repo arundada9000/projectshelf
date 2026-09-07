@@ -213,3 +213,126 @@
   color: var(--color-text-primary);
   background-color: var(--color-surface-hover);
 }
+
+/* ── Mobile Bottom Bar ──────────────────────────────────── */
+
+/* Hidden by default; the sidebar handles navigation on wider screens. */
+.bottomBar {
+  display: none;
+}
+
+/* ── Tablet: icon-only sidebar ──────────────────────────── */
+
+@media (max-width: 1023px) and (min-width: 768px) {
+  .sidebar {
+    width: 56px;
+  }
+
+  .sidebarBrand,
+  .navLabel,
+  .navSection,
+  .navShortcut {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+  }
+
+  .navItem {
+    justify-content: center;
+  }
+
+  .mainHeader,
+  .mainContent {
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+}
+
+/* ── Mobile: bottom navigation ──────────────────────────── */
+
+@media (max-width: 767px) {
+  .shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .main {
+    /* Leave room for the fixed bottom bar, including the home indicator. */
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mainHeader {
+    padding: var(--space-6) var(--space-7);
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+    background-color: var(--color-bg);
+  }
+
+  .mainTitle {
+    font-size: var(--text-xl);
+  }
+
+  .mainContent {
+    padding: var(--space-4) var(--space-7) var(--space-10);
+  }
+
+  .bottomBar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-sticky);
+    background-color: var(--color-sidebar-bg);
+    border-top: 1px solid var(--color-border-subtle);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bottomBarItem {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    min-height: 56px;
+    padding: var(--space-3) var(--space-2);
+    border: none;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--ease-default);
+  }
+
+  .bottomBarItemActive {
+    color: var(--color-accent);
+  }
+
+  .bottomBarIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bottomBarLabel {
+    font-size: var(--text-xs);
+    line-height: 1;
+    white-space: nowrap;
+  }
+}
+
+/* ── Install action ─────────────────────────────────────── */
+
+.sidebarInstall {
+  display: flex;
+  padding: 0 var(--space-2) var(--space-3);
+}
+
+.sidebarInstall:empty {
+  display: none;
+  padding: 0;
+}
