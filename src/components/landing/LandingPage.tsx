@@ -1,218 +1,238 @@
-'use client';
-
 import React from 'react';
+import Link from 'next/link';
 import {
-  FolderKanban,
-  Keyboard,
   Terminal,
-  Palette,
-  Search,
+  Keyboard,
   Layers,
-  Shield,
-  Zap,
+  HardDrive,
+  SlidersHorizontal,
+  Palette,
   ArrowRight,
 } from 'lucide-react';
+import { ProductPreview } from './ProductPreview';
+import { ChaosField } from './ChaosField';
+import { SelectionDemo } from './SelectionDemo';
+import { CommandFlow } from './CommandFlow';
+import { LandingNav } from './LandingNav';
+import { SiteFooter } from './SiteFooter';
+import { ScrollReveal } from './ScrollReveal';
+import { Parallax } from './Parallax';
+import { ScrollToTop } from './ScrollToTop';
 import styles from './Landing.module.css';
 
-// ── Feature Data ───────────────────────────────────────────
+// ── Content ────────────────────────────────────────────────
 
-const FEATURES = [
+const CAPABILITIES = [
   {
-    icon: <FolderKanban size={20} />,
-    title: 'Unified Project Hub',
-    description:
-      'All your projects in one place. Grid or list view, rich search, status filters, and tagging. No more hunting across folders.',
+    icon: <SlidersHorizontal size={17} />,
+    title: 'Your tools, not a fixed list',
+    body: 'Terminals, editors, and applications are entries you can add, edit, reorder, or delete. The Windows presets are a starting point, not a limit.',
   },
   {
-    icon: <Keyboard size={20} />,
-    title: 'Keyboard-First',
-    description:
-      'Every action has a shortcut. Command palette (Ctrl+K), global hotkeys, focus management. Built for speed.',
+    icon: <Keyboard size={17} />,
+    title: 'Bindings you choose',
+    body: 'Every action is in the command palette and bindable to any key. Rebind anything, and conflicts are flagged while you record them.',
   },
   {
-    icon: <Terminal size={20} />,
-    title: 'Quick Actions',
-    description:
-      'Open any project in your editor, terminal, or file explorer with one click. Multi-select for batch operations.',
+    icon: <Layers size={17} />,
+    title: 'Launch sets',
+    body: 'Group the projects you open together. Launching a set generates commands for all of them, with the same defaults and overrides as a manual selection.',
   },
   {
-    icon: <Palette size={20} />,
-    title: '12 Handcrafted Themes',
-    description:
-      'Midnight, Nordic, Forest, Ocean, Plum, Amber, and more. Every theme is carefully tuned for readability and aesthetics.',
+    icon: <HardDrive size={17} />,
+    title: 'Local, and staying that way',
+    body: 'Everything lives in IndexedDB in your browser. No account, no server, no telemetry. Export a JSON backup whenever you want one.',
   },
   {
-    icon: <Shield size={20} />,
-    title: 'Local-First & Offline',
-    description:
-      'Zero cloud dependencies. All data lives in your browser\'s IndexedDB. Works offline. Export/import JSON backups anytime.',
+    icon: <Palette size={17} />,
+    title: 'Twelve themes',
+    body: 'Light and dark, plus ten more built on the same semantic tokens, so every one keeps its contrast and interaction states intact.',
   },
   {
-    icon: <Layers size={20} />,
-    title: 'Launch Sets',
-    description:
-      'Group projects into launch sets. Open your entire workspace — editor, terminal, browser — in one command.',
+    icon: <Terminal size={17} />,
+    title: 'Nothing runs itself',
+    body: 'A web page cannot execute anything on your machine, and this one does not pretend to. It writes the text and copies it. You decide when it runs.',
   },
 ];
 
-const SHORTCUTS = [
-  { keys: ['Ctrl', 'K'], label: 'Command palette' },
-  { keys: ['Ctrl', 'N'], label: 'New project' },
-  { keys: ['/'], label: 'Focus search' },
-  { keys: ['?'], label: 'Shortcuts cheat sheet' },
-  { keys: ['Ctrl', ','], label: 'Settings' },
-  { keys: ['Alt', '1-4'], label: 'Navigate sections' },
-  { keys: ['Ctrl', 'E'], label: 'Open in editor' },
-  { keys: ['Ctrl', 'T'], label: 'Open terminal' },
+const FAQ = [
+  {
+    q: 'Does ProjectShelf run commands on my machine?',
+    a: 'No. A web page cannot, and it does not pretend otherwise. It generates the exact text for the tools you have configured and copies it, ready to paste into your terminal.',
+  },
+  {
+    q: 'Where is my data stored?',
+    a: 'In your browser, using IndexedDB. There is no account and no server component. You can export everything to a JSON file and import it again later.',
+  },
+  {
+    q: 'Does it work offline?',
+    a: 'Yes. Once loaded, the application and all your project data are available without a network connection. Only external links, like a repository or a hosted site, need one.',
+  },
+  {
+    q: 'Is it Windows only?',
+    a: 'The built-in presets are Windows-oriented, but every terminal, editor, and application is an editable entry. Add your own for macOS or Linux, or delete the presets entirely.',
+  },
 ];
 
 // ── Landing Page ───────────────────────────────────────────
 
-export interface LandingPageProps {
-  onLaunchApp: () => void;
-}
-
-export function LandingPage({ onLaunchApp }: LandingPageProps) {
-  // Support Ctrl+K, Ctrl+F, etc. directly from the landing page
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const hasPrimary = e.ctrlKey || e.metaKey;
-      const key = e.key.toLowerCase();
-      const code = e.code?.toLowerCase();
-
-      // Ctrl+K or Ctrl+P: Launch and open command palette
-      if (hasPrimary && (key === 'k' || code === 'keyk' || key === 'p' || code === 'keyp')) {
-        e.preventDefault();
-        e.stopPropagation();
-        onLaunchApp();
-        return;
-      }
-
-      // Ctrl+F or /: Launch and focus search
-      if ((hasPrimary && (key === 'f' || code === 'keyf')) || key === '/') {
-        e.preventDefault();
-        e.stopPropagation();
-        onLaunchApp();
-        setTimeout(() => {
-          const input = document.querySelector<HTMLInputElement>('input[role="searchbox"], input[type="text"]');
-          input?.focus();
-        }, 100);
-        return;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown, { capture: true });
-    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
-  }, [onLaunchApp]);
+export function LandingPage() {
   return (
     <div className={styles.landing}>
-      {/* ── Hero ──────────────────────────────────────────── */}
-      <section className={styles.hero}>
-        <div className={styles.heroBg} />
-        <div className={styles.heroGrid} />
-        <div className={styles.heroContent}>
-          <div className={styles.heroBadge}>
-            <Zap size={12} />
-            Local-first • Offline-ready • Zero tracking
-          </div>
-          <h1 className={styles.heroTitle}>
-            Your Developer{' '}
-            <span className={styles.heroTitleAccent}>Command Center</span>
-          </h1>
-          <p className={styles.heroSubtitle}>
-            Organize, search, and launch all your software projects from one
-            keyboard-driven interface. No cloud. No accounts. Just speed.
-          </p>
-          <div className={styles.heroActions}>
-            <button
-              type="button"
-              className={styles.heroCta}
-              onClick={onLaunchApp}
-            >
-              Launch App
-              <ArrowRight size={16} />
-            </button>
-            <button
-              type="button"
-              className={styles.heroSecondary}
-              onClick={() => {
-                document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-            >
-              See Features
-            </button>
-          </div>
-          <div className={styles.heroKbd}>
-            Press <kbd>Ctrl</kbd> + <kbd>K</kbd> to open the command palette
-          </div>
-        </div>
-      </section>
+      <LandingNav />
 
-      {/* ── Features ──────────────────────────────────────── */}
-      <section id="features" className={styles.features}>
-        <div className={styles.featuresHeader}>
-          <div className={styles.featuresLabel}>Features</div>
-          <h2 className={styles.featuresTitle}>Built for developers who ship</h2>
-          <p className={styles.featuresSubtitle}>
-            Every detail is designed for speed, clarity, and control.
-          </p>
-        </div>
-        <div className={styles.featuresGrid}>
-          {FEATURES.map((feature, i) => (
-            <div key={i} className={styles.featureCard}>
-              <div className={styles.featureIcon}>{feature.icon}</div>
-              <h3 className={styles.featureTitle}>{feature.title}</h3>
-              <p className={styles.featureDesc}>{feature.description}</p>
+      <main id="main">
+        {/* ── 1. The mess ─────────────────────────────── */}
+        <section className={styles.hero}>
+          <div className={styles.heroLayout}>
+            <div className={styles.heroCopy}>
+              <p className={styles.eyebrow}>Local-first project inventory</p>
+              <h1 className={styles.largeTitle}>
+                Your projects have been everywhere.
+              </h1>
+              <p className={styles.heroLead}>
+                Across drives, repositories, hosts, and folders you named at two in
+                the morning. ProjectShelf puts them somewhere, and gives you the
+                command to open any of them again.
+              </p>
+              <div className={styles.heroActions}>
+                <Link href="/app/projects" className={styles.primaryCta}>
+                  Open ProjectShelf
+                  <ArrowRight size={16} />
+                </Link>
+                <span className={styles.heroNote}>
+                  No account. Nothing leaves your browser.
+                </span>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* ── Keyboard Showcase ─────────────────────────────── */}
-      <section className={styles.kbdSection}>
-        <h2 className={styles.kbdTitle}>Every key does something</h2>
-        <p className={styles.kbdSubtitle}>
-          Designed for the keyboard. Every action is one shortcut away.
-        </p>
-        <div className={styles.kbdGrid}>
-          {SHORTCUTS.map((shortcut, i) => (
-            <div key={i} className={styles.kbdRow}>
-              <span className={styles.kbdLabel}>{shortcut.label}</span>
-              <span className={styles.kbdKeys}>
-                {shortcut.keys.map((k, j) => (
-                  <kbd key={j}>{k}</kbd>
-                ))}
-              </span>
+            <ChaosField />
+          </div>
+        </section>
+
+        {/* ── 2. Now they are somewhere ───────────────── */}
+        <section className={styles.section}>
+          <ScrollReveal>
+            <div className={styles.sectionNarrow}>
+              <p className={styles.sectionKicker}>Organised</p>
+              <h2 className={styles.sectionTitle}>Now they are somewhere.</h2>
+              <p className={styles.sectionLead}>
+                One list, searchable across names, paths, repositories, tags, and
+                anything else you wrote down. Filter it, sort it, and stop opening
+                folders to find out what is inside them.
+              </p>
             </div>
-          ))}
-        </div>
-      </section>
+          </ScrollReveal>
 
-      {/* ── CTA ───────────────────────────────────────────── */}
-      <section className={styles.ctaSection}>
-        <div className={styles.ctaCard}>
-          <h2 className={styles.ctaTitle}>Ready to organize your projects?</h2>
-          <p className={styles.ctaDesc}>
-            No sign-up, no cloud sync, no tracking. Just open and start adding projects.
+          <ScrollReveal order={1} className={styles.sectionFigure}>
+            <Parallax distance={46} fromScale={0.97}>
+              <ProductPreview />
+            </Parallax>
+          </ScrollReveal>
+        </section>
+
+        {/* ── 3. Select more than one ─────────────────── */}
+        <section className={styles.section}>
+          <ScrollReveal>
+            <div className={styles.sectionNarrow}>
+              <p className={styles.sectionKicker}>Selected</p>
+              <h2 className={styles.sectionTitle}>
+                Projects do not need opening one at a time.
+              </h2>
+              <p className={styles.sectionLead}>
+                Click, shift-click, or select the lot. Every action then applies to
+                the whole selection, and produces one command per project.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal order={1} className={styles.sectionFigure}>
+            <Parallax distance={34}>
+              <SelectionDemo />
+            </Parallax>
+          </ScrollReveal>
+        </section>
+
+        {/* ── 4. The command engine ───────────────────── */}
+        <section className={styles.section}>
+          <ScrollReveal>
+            <div className={styles.sectionNarrow}>
+              <p className={styles.sectionKicker}>Generated</p>
+              <h2 className={styles.sectionTitle}>
+                Do not launch projects. Launch workflows.
+              </h2>
+              <p className={styles.sectionLead}>
+                A selection meets your configuration and comes out as text. Which
+                tool gets used is decided by a global default, overridden by a
+                project, overridden again by a one-time choice, and never by
+                accident.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal order={1} className={styles.sectionFigure}>
+            <Parallax distance={28}>
+              <CommandFlow />
+            </Parallax>
+          </ScrollReveal>
+        </section>
+
+        {/* ── 5. Everything else ──────────────────────── */}
+        <section className={styles.section}>
+          <ScrollReveal>
+            <h2 className={styles.sectionTitle}>The rest of it</h2>
+          </ScrollReveal>
+
+          <ul className={styles.insetGroup}>
+            {CAPABILITIES.map((item, index) => (
+              <ScrollReveal
+                as="li"
+                key={item.title}
+                order={index}
+                className={styles.insetRow}
+              >
+                <span className={styles.insetIcon}>{item.icon}</span>
+                <div className={styles.insetBody}>
+                  <h3 className={styles.insetTitle}>{item.title}</h3>
+                  <p className={styles.insetText}>{item.body}</p>
+                </div>
+              </ScrollReveal>
+            ))}
+          </ul>
+        </section>
+
+        {/* ── 6. Questions ────────────────────────────── */}
+        <section className={styles.section}>
+          <ScrollReveal>
+            <h2 className={styles.sectionTitle}>Questions</h2>
+          </ScrollReveal>
+
+          <dl className={styles.insetGroup}>
+            {FAQ.map((item, index) => (
+              <ScrollReveal key={item.q} order={index} className={styles.faqRow}>
+                <dt className={styles.faqQuestion}>{item.q}</dt>
+                <dd className={styles.faqAnswer}>{item.a}</dd>
+              </ScrollReveal>
+            ))}
+          </dl>
+        </section>
+
+        {/* ── 7. Closing ──────────────────────────────── */}
+        <ScrollReveal as="section" className={styles.closing}>
+          <h2 className={styles.closingTitle}>Start with one project.</h2>
+          <p className={styles.closingBody}>
+            A name and a folder path is enough. Everything else is optional, and it
+            is useful from the first entry.
           </p>
-          <button
-            type="button"
-            className={styles.heroCta}
-            onClick={onLaunchApp}
-          >
-            Get Started
+          <Link href="/app/projects" className={styles.primaryCta}>
+            Open ProjectShelf
             <ArrowRight size={16} />
-          </button>
-        </div>
-      </section>
+          </Link>
+        </ScrollReveal>
+      </main>
 
-      {/* ── Footer ────────────────────────────────────────── */}
-      <footer className={styles.footer}>
-        <p className={styles.footerText}>
-          ProjectShelf — Built with Next.js, TypeScript, and IndexedDB.
-          100% local-first.
-        </p>
-      </footer>
+      <SiteFooter />
+      <ScrollToTop />
     </div>
   );
 }
