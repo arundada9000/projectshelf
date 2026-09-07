@@ -24,6 +24,7 @@ import {
   Checkbox,
   Modal,
   useToast,
+  InlineEdit,
 } from '@/components/ui';
 import { loadToolContext, type ToolContext } from '@/lib/commands/resolver';
 import { LaunchPreviewModal } from './LaunchPreviewModal';
@@ -124,6 +125,21 @@ export function LaunchSetsView() {
     [loadData, toast]
   );
 
+  const handleRenameSet = useCallback(
+    async (id: string, name: string) => {
+      const set = launchSets.find((s) => s.id === id);
+      if (!set || set.name === name) return;
+      try {
+        await updateLaunchSet({ ...set, name });
+        toast('Launch set renamed', 'success');
+        await loadData();
+      } catch {
+        toast('Could not rename launch set', 'error');
+      }
+    },
+    [launchSets, loadData, toast]
+  );
+
   /**
    * Generate the commands for every project in a set, using the same
    * configuration and precedence as a normal multi-selection.
@@ -208,7 +224,13 @@ export function LaunchSetsView() {
               <div key={set.id} className={styles.setCard}>
                 <div className={styles.setCardHeader}>
                   <div>
-                    <div className={styles.setCardTitle}>{set.name}</div>
+                    <div className={styles.setCardTitle}>
+                      <InlineEdit
+                        value={set.name}
+                        onSave={(name) => handleRenameSet(set.id, name)}
+                        className={styles.setCardTitleText}
+                      />
+                    </div>
                     <div className={styles.setCardMeta}>
                       {setProjects.length} project{setProjects.length !== 1 ? 's' : ''}
                       {set.lastUsedAt > 0 && (

@@ -58,6 +58,14 @@
   color: var(--color-text-primary);
 }
 
+.setCardTitleText {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
 .setCardMeta {
   font-size: var(--text-xs);
   color: var(--color-text-muted);

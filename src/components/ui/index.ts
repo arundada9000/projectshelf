@@ -49,3 +49,7 @@ export type { ShortcutRecorderProps } from './ShortcutRecorder';
 // ComboBox
 export { ComboBox } from './ComboBox';
 export type { ComboBoxProps, ComboBoxOption } from './ComboBox';
+
+// InlineEdit
+export { InlineEdit } from './InlineEdit';
+export type { InlineEditProps } from './InlineEdit';

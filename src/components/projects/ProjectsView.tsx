@@ -319,6 +319,21 @@ export function ProjectsView() {
     [projects, loadData, toast]
   );
 
+  const handleRenameProject = useCallback(
+    async (id: string, name: string) => {
+      const project = projects.find((p) => p.id === id);
+      if (!project || project.name === name) return;
+      try {
+        await updateProject({ ...project, name, updatedAt: Date.now() });
+        toast('Project renamed', 'success');
+        await loadData();
+      } catch {
+        toast('Could not rename project', 'error');
+      }
+    },
+    [projects, loadData, toast]
+  );
+
   /** Remove projects for real. Callers decide whether to confirm first. */
   const performDelete = useCallback(
     async (targets: Project[]) => {
@@ -820,6 +835,7 @@ export function ProjectsView() {
               onContextMenu={handleProjectContextMenu}
               onQuickAction={handleQuickAction}
               onTagClick={handleTagClick}
+              onRename={handleRenameProject}
             />
           ))}
         </div>
@@ -835,6 +851,7 @@ export function ProjectsView() {
               onContextMenu={handleProjectContextMenu}
               onQuickAction={handleQuickAction}
               onTagClick={handleTagClick}
+              onRename={handleRenameProject}
             />
           ))}
         </div>

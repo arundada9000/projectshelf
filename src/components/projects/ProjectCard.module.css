@@ -95,6 +95,11 @@
   white-space: nowrap;
 }
 
+.cardNameText {
+  display: inline;
+  vertical-align: baseline;
+}
+
 .cardPath {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
@@ -290,6 +295,13 @@
   font-size: var(--text-md);
   font-weight: var(--weight-medium);
   color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowNameText {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import type { Project } from '@/lib/db/schema';
 import { DEFAULT_STATUSES } from '@/lib/db/presets';
-import { Checkbox, Tag } from '@/components/ui';
+import { Checkbox, Tag, InlineEdit } from '@/components/ui';
 import styles from './ProjectCard.module.css';
 
 // ── Helpers ────────────────────────────────────────────────
@@ -45,6 +45,7 @@ export interface ProjectCardProps {
   onContextMenu?: (e: React.MouseEvent, project: Project) => void;
   onQuickAction?: (action: string, project: Project) => void;
   onTagClick?: (tag: string) => void;
+  onRename?: (id: string, name: string) => void;
 }
 
 export function ProjectCard({
@@ -55,6 +56,7 @@ export function ProjectCard({
   onContextMenu,
   onQuickAction,
   onTagClick,
+  onRename,
 }: ProjectCardProps) {
   const status = DEFAULT_STATUSES.find((s) => s.id === project.status);
 
@@ -105,7 +107,15 @@ export function ProjectCard({
         <div className={styles.cardInfo}>
           <div className={styles.cardName}>
             {project.isPinned && <Pin size={11} style={{ display: 'inline', marginRight: 4, opacity: 0.5 }} />}
-            {project.name}
+            {onRename ? (
+              <InlineEdit
+                value={project.name}
+                onSave={(name) => onRename(project.id, name)}
+                className={styles.cardNameText}
+              />
+            ) : (
+              project.name
+            )}
           </div>
           <div className={styles.cardPath}>{shortenPath(project.localPath)}</div>
         </div>
@@ -203,6 +213,7 @@ export interface ProjectRowProps {
   onContextMenu?: (e: React.MouseEvent, project: Project) => void;
   onQuickAction?: (action: string, project: Project) => void;
   onTagClick?: (tag: string) => void;
+  onRename?: (id: string, name: string) => void;
 }
 
 export function ProjectRow({
@@ -213,6 +224,7 @@ export function ProjectRow({
   onContextMenu,
   onQuickAction,
   onTagClick,
+  onRename,
 }: ProjectRowProps) {
   const status = DEFAULT_STATUSES.find((s) => s.id === project.status);
 
@@ -257,7 +269,15 @@ export function ProjectRow({
       </div>
 
       <div className={styles.rowMain}>
-        <span className={styles.rowName}>{project.name}</span>
+        {onRename ? (
+          <InlineEdit
+            value={project.name}
+            onSave={(name) => onRename(project.id, name)}
+            className={styles.rowNameText}
+          />
+        ) : (
+          <span className={styles.rowName}>{project.name}</span>
+        )}
         <span className={styles.rowPath}>{shortenPath(project.localPath, 60)}</span>
       </div>
 
