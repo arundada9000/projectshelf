@@ -1,0 +1,44 @@
+{
+  "name": "ProjectShelf",
+  "short_name": "ProjectShelf",
+  "description": "A local-first inventory for your software projects. Search everything you have built, select several at once, and generate the commands to open them.",
+  "id": "/app/projects",
+  "start_url": "/app/projects",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B1120",
+  "theme_color": "#0B1120",
+  "orientation": "any",
+  "categories": ["developer", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Projects",
+      "url": "/app/projects",
+      "description": "Search and launch your projects"
+    },
+    {
+      "name": "Launch Sets",
+      "url": "/app/launch-sets",
+      "description": "Open a saved group of projects"
+    },
+    {
+      "name": "Settings",
+      "url": "/app/settings",
+      "description": "Configure terminals, editors, and shortcuts"
+    }
+  ]
+}

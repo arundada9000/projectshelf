@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ProjectShelf">
+  <!-- Full bleed for maskable: art stays inside the 80% safe zone -->
+  <rect width="512" height="512" fill="#0B1120"/>
+  <rect x="146" y="163" width="220" height="38" rx="13" fill="#3B82F6" opacity="0.45"/>
+  <rect x="146" y="242" width="220" height="38" rx="13" fill="#3B82F6" opacity="0.72"/>
+  <rect x="146" y="321" width="220" height="38" rx="13" fill="#3B82F6"/>
+</svg>
