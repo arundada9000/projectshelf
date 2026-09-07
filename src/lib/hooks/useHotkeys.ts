@@ -148,7 +148,8 @@ export function useHotkeys(actions: HotkeyAction[]) {
         if (overlayOpen && (parsed.key === 'escape' || parsed.key === 'esc')) continue;
 
         if (matchesEvent(parsed, e)) {
-          // If in an input, don't hijack standard text operations like Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+Z, Ctrl+X
+          // Don't hijack standard text operations like Ctrl+A, Ctrl+C, Ctrl+V,
+          // Ctrl+Z, Ctrl+X while the user is editing text inside an input.
           if (isInput) {
             const isTextEditingKey =
               (parsed.ctrl || parsed.meta) &&
@@ -156,6 +157,17 @@ export function useHotkeys(actions: HotkeyAction[]) {
 
             if (isTextEditingKey) {
               continue; // Allow user to copy/paste/select in input
+            }
+
+            // While an input is focused, only run shortcuts that include a
+            // modifier or Escape. A bare '/', '?', 'delete', or 'f1' must keep
+            // typing naturally instead of jumping to search or a dialog.
+            const hasModifier = parsed.ctrl || parsed.meta || parsed.alt;
+            const isEscape =
+              parsed.key === 'escape' || parsed.key === 'esc';
+
+            if (!hasModifier && !isEscape) {
+              continue;
             }
           }
 

@@ -191,6 +191,8 @@ function AppFrame({ children }: { children: React.ReactNode }) {
           theme: saved.theme,
           font: saved.font,
           density: saved.density,
+          fontSize: saved.fontSize,
+          iconSize: saved.iconSize,
         });
       })
       .catch(() => {

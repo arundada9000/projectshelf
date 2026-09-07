@@ -114,6 +114,8 @@ export default function RootLayout({
       data-theme="dark"
       data-font="inter"
       data-density="comfortable"
+      data-font-size="medium"
+      data-icon-size="medium"
       suppressHydrationWarning
     >
       <body>

@@ -157,6 +157,9 @@ export type FontName =
 
 export type DensityMode = 'comfortable' | 'compact';
 
+export type FontSizeScale = 'small' | 'medium' | 'large';
+export type IconSizeScale = 'small' | 'medium' | 'large';
+
 export type ViewMode = 'grid' | 'list';
 
 export type SortField =
@@ -172,6 +175,8 @@ export interface UserSettings {
   theme: ThemeName;
   font: FontName;
   density: DensityMode;
+  fontSize: FontSizeScale;
+  iconSize: IconSizeScale;
   defaultView: ViewMode;
   defaultTerminalId: string;
   defaultEditorId: string;

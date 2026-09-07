@@ -19,6 +19,8 @@ import type {
   ThemeName,
   FontName,
   DensityMode,
+  FontSizeScale,
+  IconSizeScale,
   ViewMode,
   UserSettings,
   TerminalDefinition,
@@ -195,6 +197,24 @@ export function SettingsView() {
   } | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
 
+  // Local storage usage, refreshed when the data tab opens or data changes.
+  const [storageUsed, setStorageUsed] = useState(0);
+  const [storageQuota, setStorageQuota] = useState(0);
+
+  useEffect(() => {
+    if (activeTab !== 'data') return;
+    if (typeof navigator === 'undefined' || !navigator.storage?.estimate) return;
+    let cancelled = false;
+    navigator.storage.estimate().then((estimate) => {
+      if (cancelled) return;
+      setStorageUsed(estimate.usage ?? 0);
+      setStorageQuota(estimate.quota ?? 0);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab]);
+
   /** Reload the tool collections that the default pickers depend on. */
   const reloadTools = useCallback(() => {
     Promise.all([getAllTerminals(), getAllEditors(), getAllTools()]).then(
@@ -225,6 +245,8 @@ export function SettingsView() {
         theme: partial.theme,
         font: partial.font,
         density: partial.density,
+        fontSize: partial.fontSize,
+        iconSize: partial.iconSize,
       });
     },
     []
@@ -285,6 +307,8 @@ export function SettingsView() {
   }, [toast, reloadTools]);
 
   if (!settings) return null;
+
+  const storagePercent = storageQuota > 0 ? (storageUsed / storageQuota) * 100 : 0;
 
   return (
     <div className={styles.settingsLayout}>
@@ -378,6 +402,44 @@ export function SettingsView() {
                     ]}
                     value={settings.density}
                     onChange={(v) => update({ density: v as DensityMode })}
+                  />
+                </div>
+              </div>
+
+              {/* Font size */}
+              <div className={styles.settingsRow}>
+                <div className={styles.settingsRowInfo}>
+                  <span className={styles.settingsRowLabel}>Font size</span>
+                  <span className={styles.settingsRowDesc}>Smaller or larger text across the whole interface</span>
+                </div>
+                <div className={styles.settingsRowControl}>
+                  <Select
+                    options={[
+                      { value: 'small', label: 'Small' },
+                      { value: 'medium', label: 'Medium' },
+                      { value: 'large', label: 'Large' },
+                    ]}
+                    value={settings.fontSize}
+                    onChange={(v) => update({ fontSize: v as FontSizeScale })}
+                  />
+                </div>
+              </div>
+
+              {/* Icon size */}
+              <div className={styles.settingsRow}>
+                <div className={styles.settingsRowInfo}>
+                  <span className={styles.settingsRowLabel}>Icon size</span>
+                  <span className={styles.settingsRowDesc}>Scales all interface icons while keeping their relative sizes</span>
+                </div>
+                <div className={styles.settingsRowControl}>
+                  <Select
+                    options={[
+                      { value: 'small', label: 'Small' },
+                      { value: 'medium', label: 'Medium' },
+                      { value: 'large', label: 'Large' },
+                    ]}
+                    value={settings.iconSize}
+                    onChange={(v) => update({ iconSize: v as IconSizeScale })}
                   />
                 </div>
               </div>
@@ -679,6 +741,32 @@ export function SettingsView() {
             </div>
 
             <div className={styles.settingsSection}>
+              <h3 className={styles.settingsSectionTitle}>Storage</h3>
+              <p className={styles.settingsSectionDesc}>
+                ProjectShelf stores everything in your browser&apos;s local storage. Nothing is
+                uploaded anywhere.
+              </p>
+              <div className={styles.storageRow}>
+                <div className={styles.storageInfo}>
+                  <span className={styles.settingsRowLabel}>Used by ProjectShelf</span>
+                  <span className={styles.settingsRowDesc}>The amount of space your projects and settings currently occupy</span>
+                </div>
+                <div className={styles.storageBar}>
+                  <div className={styles.storageTrack}>
+                    <div
+                      className={styles.storageFill}
+                      style={{ width: storagePercent ? `${Math.min(storagePercent, 100)}%` : '0%' }}
+                    />
+                  </div>
+                  <div className={styles.storageNumbers}>
+                    <span>{formatBytes(storageUsed)}</span>
+                    <span>{formatBytes(storageQuota)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.settingsSection}>
               <h3 className={styles.settingsSectionTitle}>Danger Zone</h3>
               <div className={styles.dangerZone}>
                 <div className={styles.dangerTitle}>Clear All Data</div>
@@ -807,3 +895,16 @@ const IMPORT_LABELS: Record<string, string> = {
   shortcuts: 'Shortcuts',
   tags: 'Tags',
 };
+
+// ── Byte Formatting ────────────────────────────────────────
+
+function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1
+  );
+  const value = bytes / Math.pow(1024, i);
+  return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}

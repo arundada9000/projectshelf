@@ -194,6 +194,27 @@ async function seedStore<K extends 'terminals' | 'editors' | 'tools' | 'commands
   await tx.done;
 }
 
+/**
+ * Back-fill built-in presets that did not exist when the database was first
+ * seeded. Existing installs keep the defaults they already have, and any
+ * newly added preset (such as the '/' focus-search binding) appears without
+ * requiring the user to reset their shortcuts.
+ */
+async function ensureBuiltInPresets(
+  db: IDBPDatabase<ProjectShelfDB>,
+  storeName: 'terminals' | 'editors' | 'tools' | 'commands' | 'shortcuts',
+  records: { id: string }[]
+): Promise<void> {
+  const tx = db.transaction(storeName, 'readwrite');
+  for (const record of records) {
+    const existing = await tx.store.get(record.id);
+    if (!existing) {
+      await tx.store.put(record);
+    }
+  }
+  await tx.done;
+}
+
 async function seedDefaults(db: IDBPDatabase<ProjectShelfDB>): Promise<void> {
   const existingSettings = await db.get(STORES.settings, 'user');
   if (!existingSettings) {
@@ -205,6 +226,10 @@ async function seedDefaults(db: IDBPDatabase<ProjectShelfDB>): Promise<void> {
   await seedStore(db, STORES.tools, DEFAULT_TOOLS);
   await seedStore(db, STORES.commands, DEFAULT_COMMANDS);
   await seedStore(db, STORES.shortcuts, DEFAULT_SHORTCUTS);
+
+  // Existing databases refresh their built-in presets with any that were
+  // added since their first seed. User configuration is never overwritten.
+  await ensureBuiltInPresets(db, STORES.shortcuts, DEFAULT_SHORTCUTS);
 }
 
 // ── Utility: Generate ID ───────────────────────────────────

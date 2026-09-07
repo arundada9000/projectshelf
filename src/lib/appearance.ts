@@ -8,7 +8,13 @@
    on the next load, before the first paint.
    ============================================================ */
 
-import type { ThemeName, FontName, DensityMode } from '@/lib/db/schema';
+import type {
+  ThemeName,
+  FontName,
+  DensityMode,
+  FontSizeScale,
+  IconSizeScale,
+} from '@/lib/db/schema';
 
 // ── Storage Keys ───────────────────────────────────────────
 
@@ -16,6 +22,8 @@ export const APPEARANCE_KEYS = {
   theme: 'projectshelf:theme',
   font: 'projectshelf:font',
   density: 'projectshelf:density',
+  fontSize: 'projectshelf:font-size',
+  iconSize: 'projectshelf:icon-size',
 } as const;
 
 // ── Resolve ────────────────────────────────────────────────
@@ -36,6 +44,8 @@ export interface AppearanceValues {
   theme?: ThemeName;
   font?: FontName;
   density?: DensityMode;
+  fontSize?: FontSizeScale;
+  iconSize?: IconSizeScale;
 }
 
 /**
@@ -57,6 +67,14 @@ export function applyAppearance(values: AppearanceValues): void {
   if (values.density) {
     root.setAttribute('data-density', values.density);
     writeMirror(APPEARANCE_KEYS.density, values.density);
+  }
+  if (values.fontSize) {
+    root.setAttribute('data-font-size', values.fontSize);
+    writeMirror(APPEARANCE_KEYS.fontSize, values.fontSize);
+  }
+  if (values.iconSize) {
+    root.setAttribute('data-icon-size', values.iconSize);
+    writeMirror(APPEARANCE_KEYS.iconSize, values.iconSize);
   }
 }
 
@@ -110,6 +128,8 @@ export const APPEARANCE_BOOT_SCRIPT = `
     var theme = localStorage.getItem('${APPEARANCE_KEYS.theme}');
     var font = localStorage.getItem('${APPEARANCE_KEYS.font}');
     var density = localStorage.getItem('${APPEARANCE_KEYS.density}');
+    var fontSize = localStorage.getItem('${APPEARANCE_KEYS.fontSize}');
+    var iconSize = localStorage.getItem('${APPEARANCE_KEYS.iconSize}');
 
     if (!theme || theme === 'system') {
       theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
@@ -117,6 +137,8 @@ export const APPEARANCE_BOOT_SCRIPT = `
     root.setAttribute('data-theme', theme);
     if (font) root.setAttribute('data-font', font);
     if (density) root.setAttribute('data-density', density);
+    if (fontSize) root.setAttribute('data-font-size', fontSize);
+    if (iconSize) root.setAttribute('data-icon-size', iconSize);
   } catch (e) {
     // Leave the server-rendered defaults in place.
   }

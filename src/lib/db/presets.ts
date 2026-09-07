@@ -327,6 +327,14 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     isBuiltIn: true,
   },
   {
+    id: 'sc-search-slash',
+    actionId: 'focusSearch',
+    keyCombo: '/',
+    scope: 'global',
+    description: 'Focus search',
+    isBuiltIn: true,
+  },
+  {
     id: 'sc-shortcuts',
     actionId: 'showShortcuts',
     keyCombo: 'shift+?',
@@ -495,6 +503,8 @@ export const DEFAULT_SETTINGS: UserSettings = {
   theme: 'system',
   font: 'inter',
   density: 'comfortable',
+  fontSize: 'medium',
+  iconSize: 'medium',
   defaultView: 'grid',
   defaultTerminalId: 'terminal-powershell',
   defaultEditorId: 'editor-vscode',

@@ -116,3 +116,22 @@
   --density-gap: var(--space-4);
   --density-section-gap: var(--space-8);
 }
+
+/* ── Icon Size Scale ──────────────────────────────────────
+   lucide-react sets explicit pixel sizes per icon, so a
+   proportional zoom scales every icon in place, keeping the
+   size hierarchy (14px in dense rows, 44px in empty states)
+   while making the whole scale small or large.
+   =========================================================== */
+
+[data-icon-size="small"] svg.lucide {
+  zoom: 0.85;
+}
+
+[data-icon-size="medium"] svg.lucide {
+  zoom: 1;
+}
+
+[data-icon-size="large"] svg.lucide {
+  zoom: 1.18;
+}

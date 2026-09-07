@@ -76,3 +76,28 @@
 [data-font="mono"] {
   --font-sans: var(--font-jetbrains-mono), 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
 }
+
+/* ── Font Size Scale ──────────────────────────────────────
+   The type scale is rem-based, so scaling the root font-size
+   scales every --text-* token proportionally. Spacing tokens
+   are px-based and stay put, so rows and paddings do not grow
+   with the text. Custom controls that deliberately break the
+   scale (clamp()d marketing text) are outside the app shell.
+   =========================================================== */
+
+[data-font-size="small"] {
+  --font-size-scale: 0.92;
+}
+
+[data-font-size="medium"],
+:root {
+  --font-size-scale: 1;
+}
+
+[data-font-size="large"] {
+  --font-size-scale: 1.12;
+}
+
+[data-font-size] {
+  font-size: calc(16px * var(--font-size-scale));
+}
