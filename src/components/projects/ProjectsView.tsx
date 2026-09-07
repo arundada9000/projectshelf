@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   FolderArchive,
   Code2,
@@ -840,21 +841,16 @@ export function ProjectsView() {
           ))}
         </div>
       ) : (
-        <div className={styles.projectList} role="listbox" aria-multiselectable="true">
-          {filtered.map((project) => (
-            <ProjectRow
-              key={project.id}
-              project={project}
-              selected={selectedIds.has(project.id)}
-              onSelect={handleSelect}
-              onOpen={handleOpenProject}
-              onContextMenu={handleProjectContextMenu}
-              onQuickAction={handleQuickAction}
-              onTagClick={handleTagClick}
-              onRename={handleRenameProject}
-            />
-          ))}
-        </div>
+        <ProjectVirtualList
+          projects={filtered}
+          selectedIds={selectedIds}
+          onSelect={handleSelect}
+          onOpen={handleOpenProject}
+          onContextMenu={handleProjectContextMenu}
+          onQuickAction={handleQuickAction}
+          onTagClick={handleTagClick}
+          onRename={handleRenameProject}
+        />
       )}
 
       <SelectionToolbar
@@ -1345,6 +1341,107 @@ export function ProjectsView() {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// ── Virtualized List ───────────────────────────────────────
+
+interface ProjectVirtualListProps {
+  projects: Project[];
+  selectedIds: Set<string>;
+  onSelect: (id: string, multi: boolean, shift?: boolean) => void;
+  onOpen: (project: Project) => void;
+  onContextMenu?: (e: React.MouseEvent, project: Project) => void;
+  onQuickAction?: (action: string, project: Project) => void;
+  onTagClick?: (tag: string) => void;
+  onRename?: (id: string, name: string) => void;
+}
+
+const PROJECT_ROW_HEIGHT = 64;
+
+/**
+ * Renders the list view with row virtualization so that hundreds of
+ * projects stay responsive. Uses the nearest scrollable ancestor as the
+ * scroll element (the app shell's main content area).
+ */
+function ProjectVirtualList({
+  projects,
+  selectedIds,
+  onSelect,
+  onOpen,
+  onContextMenu,
+  onQuickAction,
+  onTagClick,
+  onRename,
+}: ProjectVirtualListProps) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const getScrollElement = useCallback(() => {
+    const el = parentRef.current;
+    if (!el) return null;
+    let node = el.parentElement;
+    while (node) {
+      const style = getComputedStyle(node);
+      if (/(auto|scroll|overlay)/.test(style.overflowY)) {
+        return node;
+      }
+      node = node.parentElement;
+    }
+    return document.documentElement;
+  }, []);
+
+  const rowVirtualizer = useVirtualizer({
+    count: projects.length,
+    getScrollElement,
+    estimateSize: () => PROJECT_ROW_HEIGHT,
+    overscan: 12,
+  });
+
+  return (
+    <div
+      ref={parentRef}
+      className={styles.projectList}
+      role="listbox"
+      aria-multiselectable="true"
+      style={{ contain: 'layout paint' }}
+    >
+      <div
+        style={{
+          height: rowVirtualizer.getTotalSize(),
+          position: 'relative',
+          width: '100%',
+        }}
+      >
+        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+          const project = projects[virtualRow.index];
+          return (
+            <div
+              key={project.id}
+              data-index={virtualRow.index}
+              ref={rowVirtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+            >
+              <ProjectRow
+                project={project}
+                selected={selectedIds.has(project.id)}
+                onSelect={onSelect}
+                onOpen={onOpen}
+                onContextMenu={onContextMenu}
+                onQuickAction={onQuickAction}
+                onTagClick={onTagClick}
+                onRename={onRename}
+              />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
