@@ -88,6 +88,12 @@
   /* --bp-xl: 1280px; */
   /* --bp-2xl: 1536px; */
 
+  /* ── Derived Surfaces ─────────────────────────────────── */
+  /* Built from per-theme colors, so these follow the active theme
+     without needing a definition inside all twelve theme blocks. */
+  --color-sidebar-bg: var(--color-bg-alt);
+  --shadow-selection: 0 0 0 1px var(--color-selection-border);
+
   /* ── Opacity Scale ────────────────────────────────────── */
   --opacity-muted: 0.5;
   --opacity-disabled: 0.38;

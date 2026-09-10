@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { GripVertical } from 'lucide-react';
 import { haptic } from '@/lib/haptics';
 import styles from './SortableList.module.css';
@@ -18,7 +18,7 @@ export interface SortableListProps<T> {
   renderItem: (item: T, index: number) => React.ReactNode;
   /** Optional class applied to each row, e.g. to flag a disabled item. */
   rowClassName?: (item: T, index: number) => string;
-  /** Accessible label for the drag handle. */
+  /** Tooltip shown on the drag handle. */
   handleLabel?: (item: T) => string;
 }
 
@@ -38,14 +38,10 @@ export function SortableList<T>({
 }: SortableListProps<T>) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
-  const dragOffsetY = useRef(0);
 
   const handleDragStart = useCallback(
     (e: React.DragEvent, index: number) => {
       setDragIndex(index);
-      // Offset that keeps the cursor steady while dragging (most useful on
-      // desktop where the browser shows a static preview).
-      dragOffsetY.current = e.clientY - e.currentTarget.getBoundingClientRect().top;
       e.dataTransfer.effectAllowed = 'move';
       try {
         e.dataTransfer.setData('text/plain', String(index));
@@ -69,7 +65,16 @@ export function SortableList<T>({
   const handleDrop = useCallback(
     (e: React.DragEvent, targetIndex: number) => {
       e.preventDefault();
-      const from = dragIndex ?? (Number(e.dataTransfer.getData('text/plain')) || targetIndex);
+      // dragIndex covers the normal path. The dataTransfer payload is the
+      // fallback for browsers that clear React state between the two events;
+      // parse it explicitly so that a dragged index of 0 is not mistaken for
+      // a missing value.
+      let from = dragIndex;
+      if (from === null) {
+        const payload = Number.parseInt(e.dataTransfer.getData('text/plain'), 10);
+        from = Number.isNaN(payload) ? null : payload;
+      }
+
       if (from === null || from < 0 || from >= items.length || from === targetIndex) {
         setDragIndex(null);
         setOverIndex(null);
@@ -102,6 +107,12 @@ export function SortableList<T>({
           onDragOver={(e) => handleDragOver(e, index)}
           onDrop={(e) => handleDrop(e, index)}
         >
+          {/*
+            Presentational on purpose. Dragging is a pointer affordance; the
+            keyboard path is the move up/down buttons the parent renders in
+            renderItem, so exposing this as a second control would only add a
+            focus stop that cannot be activated.
+          */}
           <span
             className={styles.handle}
             draggable
@@ -110,10 +121,8 @@ export function SortableList<T>({
               setDragIndex(null);
               setOverIndex(null);
             }}
-            role="button"
-            tabIndex={-1}
-            aria-label={handleLabel?.(item) ?? 'Drag to reorder'}
-            title="Drag to reorder"
+            aria-hidden="true"
+            title={handleLabel?.(item) ?? 'Drag to reorder'}
           >
             <GripVertical size={15} />
           </span>

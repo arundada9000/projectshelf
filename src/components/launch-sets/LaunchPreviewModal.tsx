@@ -96,6 +96,7 @@ export function LaunchPreviewModal({
           <div className={styles.launchPreviewField}>
             <span className={styles.launchPreviewLabel}>Open in</span>
             <SegmentedControl
+              ariaLabel="Open in"
               options={TARGETS}
               value={kind}
               onChange={(next) => {

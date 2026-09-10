@@ -106,7 +106,9 @@ export function ProjectCard({
         </div>
         <div className={styles.cardInfo}>
           <div className={styles.cardName}>
-            {project.isPinned && <Pin size={11} style={{ display: 'inline', marginRight: 4, opacity: 0.5 }} />}
+            {project.isPinned && (
+              <Pin size={11} className={styles.pinMark} aria-label="Pinned" />
+            )}
             {onRename ? (
               <InlineEdit
                 value={project.name}

@@ -272,10 +272,7 @@ export function CollectionSection<T extends ConfigurableRecord>({
             onReorder={reorderByOrder}
             rowClassName={(item) => (item.enabled ? '' : styles.collectionItemDisabled)}
             renderItem={(item, index) => (
-              <div
-                className={styles.collectionItem}
-                style={{ flex: 1, minWidth: 0, border: 'none', borderRadius: 0 }}
-              >
+              <div className={`${styles.collectionItem} ${styles.collectionItemInRow}`}>
                 <div className={styles.collectionItemMain}>
                   <span className={styles.collectionItemName}>
                     {item.name}

@@ -129,9 +129,20 @@ export function ProjectToolbar({
         />
 
         <SegmentedControl
+          ariaLabel="View mode"
           options={[
-            { value: 'grid' as ViewMode, label: '', icon: <LayoutGrid size={14} /> },
-            { value: 'list' as ViewMode, label: '', icon: <List size={14} /> },
+            {
+              value: 'grid' as ViewMode,
+              label: 'Grid view',
+              labelHidden: true,
+              icon: <LayoutGrid size={14} />,
+            },
+            {
+              value: 'list' as ViewMode,
+              label: 'List view',
+              labelHidden: true,
+              icon: <List size={14} />,
+            },
           ]}
           value={viewMode}
           onChange={onViewModeChange}

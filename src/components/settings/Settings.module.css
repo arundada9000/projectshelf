@@ -186,6 +186,15 @@
   border-color: var(--color-border);
 }
 
+/* Inside a sortable row the surrounding row draws the border, so the item
+   itself becomes a plain flex child. */
+.collectionItemInRow {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 0;
+}
+
 .collectionItemDisabled {
   opacity: var(--opacity-muted);
 }

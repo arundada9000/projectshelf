@@ -17,8 +17,12 @@ export interface InlineEditProps {
 }
 
 /**
- * Displays text that becomes an editable input on click.
+ * Displays text that becomes an editable input on click or via the keyboard.
  * Press Enter or blur to save, Escape to cancel.
+ *
+ * The input carries data-escape-local so the global hotkey listener leaves
+ * Escape alone while an edit is open; otherwise the capture-phase handler
+ * would swallow the key and clear the selection instead of cancelling.
  */
 export function InlineEdit({
   value,
@@ -49,6 +53,11 @@ export function InlineEdit({
     setEditing(false);
   };
 
+  const beginEditing = () => {
+    setDraft(value);
+    setEditing(true);
+  };
+
   const cancel = () => {
     setDraft(value);
     setEditing(false);
@@ -60,16 +69,19 @@ export function InlineEdit({
         ref={inputRef}
         type="text"
         className={styles.input}
+        data-escape-local="true"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
+            e.stopPropagation();
             commit();
           }
           if (e.key === 'Escape') {
             e.preventDefault();
+            e.stopPropagation();
             cancel();
           }
         }}
@@ -83,13 +95,23 @@ export function InlineEdit({
   return (
     <Tag
       className={`${styles.display} ${disabled ? '' : styles.interactive} ${className ?? ''}`}
+      role={disabled ? undefined : 'button'}
+      tabIndex={disabled ? undefined : 0}
       onClick={(e) => {
         if (disabled) return;
         e.stopPropagation();
-        setDraft(value);
-        setEditing(true);
+        beginEditing();
       }}
-      title={disabled ? undefined : 'Click to edit'}
+      onKeyDown={(e) => {
+        if (disabled) return;
+        // Enter and Space are how a button is activated from the keyboard.
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          e.stopPropagation();
+          beginEditing();
+        }
+      }}
+      aria-label={disabled ? undefined : `Rename ${value || placeholder}`}
     >
       {value || <span className={styles.placeholder}>{placeholder}</span>}
     </Tag>

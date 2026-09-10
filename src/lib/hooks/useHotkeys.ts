@@ -141,11 +141,17 @@ export function useHotkeys(actions: HotkeyAction[]) {
       // for example, wipe the user's selection behind the dialog.
       const overlayOpen = document.querySelector('[role="dialog"]') !== null;
 
+      // A field can claim Escape for itself (an inline editor cancelling an
+      // edit, say). This listener runs in the capture phase and stops
+      // propagation, so without an opt-out the field would never see the key.
+      const escapeIsLocal = target?.closest?.('[data-escape-local="true"]') != null;
+
       for (const action of actionsRef.current) {
         if (action.enabled === false) continue;
         const parsed = parseKeyCombo(action.keyCombo);
 
-        if (overlayOpen && (parsed.key === 'escape' || parsed.key === 'esc')) continue;
+        const isEscapeCombo = parsed.key === 'escape' || parsed.key === 'esc';
+        if ((overlayOpen || escapeIsLocal) && isEscapeCombo) continue;
 
         if (matchesEvent(parsed, e)) {
           // Don't hijack standard text operations like Ctrl+A, Ctrl+C, Ctrl+V,
@@ -163,10 +169,8 @@ export function useHotkeys(actions: HotkeyAction[]) {
             // modifier or Escape. A bare '/', '?', 'delete', or 'f1' must keep
             // typing naturally instead of jumping to search or a dialog.
             const hasModifier = parsed.ctrl || parsed.meta || parsed.alt;
-            const isEscape =
-              parsed.key === 'escape' || parsed.key === 'esc';
 
-            if (!hasModifier && !isEscape) {
+            if (!hasModifier && !isEscapeCombo) {
               continue;
             }
           }

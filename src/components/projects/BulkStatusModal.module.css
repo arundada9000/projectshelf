@@ -1,0 +1,66 @@
+/* ── Bulk Status Modal ──────────────────────────────────── */
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.intro {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-default),
+    border-color var(--duration-fast) var(--ease-default);
+}
+
+.option:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.optionSelected {
+  border-color: var(--color-selection-border);
+  background-color: var(--color-selection-bg);
+}
+
+/* Keyboard focus lands on the radio, so the ring is drawn on the row. */
+.option:has(:focus-visible) {
+  box-shadow: var(--shadow-focus);
+}
+
+.optionMain {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.radio {
+  accent-color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.optionId {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.footer {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+  width: 100%;
+}

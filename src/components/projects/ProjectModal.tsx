@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FolderOpen, Globe, GitBranch } from 'lucide-react';
+import { FolderOpen, Globe, GitBranch, X } from 'lucide-react';
 import type {
   Project,
   ProjectStatus,
@@ -17,6 +17,7 @@ import {
   Select,
   Button,
 } from '@/components/ui';
+import styles from './ProjectModal.module.css';
 
 // ── Project Modal ──────────────────────────────────────────
 
@@ -150,10 +151,7 @@ function ProjectModalBody({
         </>
       }
     >
-      <form
-        onSubmit={handleSubmit}
-        style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-7)' }}
-      >
+      <form onSubmit={handleSubmit} className={styles.form}>
         {/* Name */}
         <Input
           label="Project Name"
@@ -226,28 +224,18 @@ function ProjectModalBody({
             helpText="Press Enter to add. Click tag to remove."
           />
           {form.tags.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginTop: 'var(--space-3)' }}>
+            <div className={styles.tagList}>
               {form.tags.map((tag) => (
-                <span
+                <button
                   key={tag}
+                  type="button"
+                  className={styles.tagChip}
                   onClick={() => handleRemoveTag(tag)}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-2)',
-                    padding: '0 var(--space-4)',
-                    height: '24px',
-                    fontSize: 'var(--text-xs)',
-                    fontWeight: 'var(--weight-medium)',
-                    color: 'var(--color-accent)',
-                    background: 'var(--color-accent-subtle)',
-                    border: '1px solid var(--color-selection-border)',
-                    borderRadius: 'var(--radius-md)',
-                    cursor: 'pointer',
-                  }}
+                  aria-label={`Remove tag ${tag}`}
                 >
-                  {tag} x
-                </span>
+                  {tag}
+                  <X size={11} aria-hidden="true" />
+                </button>
               ))}
             </div>
           )}
@@ -257,16 +245,8 @@ function ProjectModalBody({
         <button
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--color-text-link)',
-            cursor: 'pointer',
-            fontSize: 'var(--text-sm)',
-            fontWeight: 'var(--weight-medium)',
-            textAlign: 'left',
-            padding: 0,
-          }}
+          className={styles.advancedToggle}
+          aria-expanded={showAdvanced}
         >
           {showAdvanced ? 'Hide advanced fields' : 'Show advanced fields'}
         </button>

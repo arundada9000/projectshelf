@@ -193,6 +193,8 @@ export interface SegmentedOption<T extends string> {
   value: T;
   label: string;
   icon?: React.ReactNode;
+  /** Show the icon alone. The label still names the option for assistive tech. */
+  labelHidden?: boolean;
 }
 
 export interface SegmentedControlProps<T extends string> {
@@ -200,6 +202,8 @@ export interface SegmentedControlProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   className?: string;
+  /** Names the group, e.g. 'View mode'. */
+  ariaLabel?: string;
 }
 
 export function SegmentedControl<T extends string>({
@@ -207,22 +211,50 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
   className,
+  ariaLabel,
 }: SegmentedControlProps<T>) {
+  // A radiogroup takes one tab stop; Left/Right move between the options.
+  const moveSelection = (from: number, delta: number) => {
+    const next = (from + delta + options.length) % options.length;
+    onChange(options[next].value);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      moveSelection(index, 1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveSelection(index, -1);
+    }
+  };
+
   return (
-    <div className={`${styles.segmentedControl} ${className ?? ''}`} role="radiogroup">
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          role="radio"
-          aria-checked={value === option.value}
-          className={`${styles.segmentedOption} ${value === option.value ? styles.segmentedActive : ''}`}
-          onClick={() => onChange(option.value)}
-        >
-          {option.icon}
-          {option.label}
-        </button>
-      ))}
+    <div
+      className={`${styles.segmentedControl} ${className ?? ''}`}
+      role="radiogroup"
+      aria-label={ariaLabel}
+    >
+      {options.map((option, index) => {
+        const checked = value === option.value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={checked}
+            aria-label={option.labelHidden ? option.label : undefined}
+            title={option.labelHidden ? option.label : undefined}
+            tabIndex={checked ? 0 : -1}
+            className={`${styles.segmentedOption} ${checked ? styles.segmentedActive : ''}`}
+            onClick={() => onChange(option.value)}
+            onKeyDown={(e) => handleKeyDown(e, index)}
+          >
+            {option.icon}
+            {option.labelHidden ? null : option.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

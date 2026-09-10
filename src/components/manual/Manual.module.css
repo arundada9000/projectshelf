@@ -249,3 +249,9 @@
   margin-top: 2px;
   color: var(--color-text-muted);
 }
+
+.manualNoResults {
+  padding: var(--space-10);
+  color: var(--color-text-muted);
+  text-align: center;
+}

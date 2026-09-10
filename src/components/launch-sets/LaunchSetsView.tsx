@@ -254,7 +254,7 @@ export function LaunchSetsView() {
                     </div>
                   ))}
                   {set.projectIds.length > setProjects.length && (
-                    <div className={styles.setProjectItem} style={{ opacity: 0.5 }}>
+                    <div className={`${styles.setProjectItem} ${styles.setProjectItemMissing}`}>
                       <span className={styles.setProjectName}>
                         {set.projectIds.length - setProjects.length} missing project(s)
                       </span>
@@ -434,18 +434,12 @@ function LaunchSetModalBody({
           rows={2}
         />
         <div>
-          <label style={{
-            display: 'block',
-            fontSize: 'var(--text-sm)',
-            fontWeight: 'var(--weight-medium)',
-            color: 'var(--color-text-secondary)',
-            marginBottom: 'var(--space-3)',
-          }}>
+          <label className={styles.pickerLabel}>
             Select Projects ({selectedIds.size} selected)
           </label>
           <div className={styles.projectPicker}>
             {projects.length === 0 ? (
-              <div style={{ padding: 'var(--space-6)', color: 'var(--color-text-muted)', textAlign: 'center', fontSize: 'var(--text-sm)' }}>
+              <div className={styles.pickerEmpty}>
                 No projects yet. Add projects first.
               </div>
             ) : (

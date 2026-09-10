@@ -7,6 +7,7 @@ import { getAllCommands } from '@/lib/db';
 import { Modal, Button, CommandPreview, Select } from '@/components/ui';
 import { resolveCommandsBatch } from '@/lib/commands/engine';
 import { copyText } from '@/lib/clipboard';
+import styles from './BatchCommandModal.module.css';
 
 export interface BatchCommandModalProps {
   open: boolean;
@@ -87,7 +88,7 @@ export function BatchCommandModal({ open, onClose, projects }: BatchCommandModal
           No commands are enabled. Add one in Settings, under Commands.
         </p>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
+        <div className={styles.batchFields}>
           <Select
             label="Command"
             value={selectedCommandId}

@@ -461,7 +461,7 @@ export function ManualView() {
       ))}
 
       {sections.length === 0 && (
-        <p style={{ color: 'var(--color-text-muted)', padding: 'var(--space-10)', textAlign: 'center' }}>
+        <p className={styles.manualNoResults}>
           No sections match &quot;{search}&quot;
         </p>
       )}

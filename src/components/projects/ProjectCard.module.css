@@ -352,3 +352,9 @@
 .row:hover .rowActions {
   opacity: 1;
 }
+
+.pinMark {
+  display: inline;
+  margin-right: var(--space-2);
+  opacity: var(--opacity-muted);
+}

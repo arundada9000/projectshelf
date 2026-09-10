@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import type { ProjectStatus } from '@/lib/db/schema';
 import { DEFAULT_STATUSES } from '@/lib/db/presets';
 import { Modal, Button, Badge } from '@/components/ui';
+import styles from './BulkStatusModal.module.css';
 
 export interface BulkStatusModalProps {
   open: boolean;
@@ -47,7 +48,7 @@ export function BulkStatusModal({
       title={`Update Status for ${count} Project${count !== 1 ? 's' : ''}`}
       size="narrow"
       footer={
-        <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'flex-end', width: '100%' }}>
+        <div className={styles.footer}>
           <Button variant="ghost" onClick={onClose} disabled={loading}>
             Cancel
           </Button>
@@ -57,8 +58,8 @@ export function BulkStatusModal({
         </div>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-secondary)', marginBottom: 'var(--space-2)' }}>
+      <div className={styles.options}>
+        <p className={styles.intro}>
           Choose a new status to apply to all {count} selected projects:
         </p>
 
@@ -67,34 +68,23 @@ export function BulkStatusModal({
           const variant = statusVariantMap[status.id] ?? 'default';
 
           return (
-            <div
+            <label
               key={status.id}
-              onClick={() => setSelectedStatus(status.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 'var(--space-3) var(--space-4)',
-                borderRadius: 'var(--radius-md)',
-                border: isSelected ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
-                background: isSelected ? 'var(--color-primary-subtle)' : 'var(--color-surface)',
-                cursor: 'pointer',
-                transition: 'var(--transition-fast)',
-              }}
+              className={`${styles.option} ${isSelected ? styles.optionSelected : ''}`}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <span className={styles.optionMain}>
                 <input
                   type="radio"
+                  name="bulk-status"
+                  className={styles.radio}
+                  value={status.id}
                   checked={isSelected}
                   onChange={() => setSelectedStatus(status.id)}
-                  style={{ accentColor: 'var(--color-primary)' }}
                 />
                 <Badge variant={variant}>{status.label}</Badge>
-              </div>
-              <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                {status.id}
               </span>
-            </div>
+              <span className={styles.optionId}>{status.id}</span>
+            </label>
           );
         })}
       </div>
